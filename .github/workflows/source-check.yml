@@ -27,7 +27,9 @@ jobs:
       - name: Build host runtime and DXVK without game files
         run: |
           set -o pipefail
-          JOBS=2 sh desktop/build.sh -DLB_BUILD_GAME=OFF 2>&1 | tee dist/build.log
+          JOBS=2 sh desktop/build.sh -DLB_BUILD_GAME=OFF -DSKYDREAM_SKSE=OFF -DSKYDREAM_SKYUI=OFF 2>&1 | tee dist/build.log
+          JOBS=2 sh desktop/build.sh -DLB_BUILD_GAME=OFF -DSKYDREAM_SKSE=ON 2>&1 | tee -a dist/build.log
+          JOBS=2 sh desktop/build.sh -DLB_BUILD_GAME=OFF -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON 2>&1 | tee -a dist/build.log
       - name: Package runtime check and sources
         run: |
           mkdir -p dist/runtime-check/lib

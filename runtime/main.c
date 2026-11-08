@@ -431,6 +431,15 @@ static void linux_paths(int argc, char **argv) {
                 "Requires Skyrim 2011 (TESV.exe), not Special Edition.\n"
                 "Default saves: $XDG_DATA_HOME/skyrim-native/save\n"
                 "              or $HOME/.local/share/skyrim-native/save\n", program);
+#ifdef SKYDREAM_SKSE
+        fputs("SKSE compatibility: experimental Papyrus subset enabled (API 0.1.0).\n"
+              "Windows SKSE DLL plugins and co-saves are unsupported.\n", stdout);
+#ifdef SKYDREAM_SKYUI
+        fputs("SkyUI: experimental interface enabled by default; partial SKSE 1.7.3 ABI.\n", stdout);
+#endif
+#else
+        fputs("SKSE compatibility: disabled at build time.\n", stdout);
+#endif
         exit(0);
     }
     char executable[4096];
@@ -464,8 +473,13 @@ static void linux_paths(int argc, char **argv) {
             n = snprintf(path, sizeof path, "%s/%s", cwd, argv[2]);
         }
     } else {
+        char portable[sizeof g_save_dir];
+        struct stat profile_stat;
+        snprintf(portable,sizeof portable,"%s/portable-profile",g_game_dir);
         const char *data = getenv("XDG_DATA_HOME"), *home = getenv("HOME");
-        if (data && data[0] == '/') n = snprintf(path, sizeof path, "%s/skyrim-native/save", data);
+        if (!stat(portable,&profile_stat) && S_ISDIR(profile_stat.st_mode))
+            n = snprintf(path,sizeof path,"%s",portable);
+        else if (data && data[0] == '/') n = snprintf(path, sizeof path, "%s/skyrim-native/save", data);
         else if (home && home[0] == '/') n = snprintf(path, sizeof path, "%s/.local/share/skyrim-native/save", home);
         else { rt_fatal("set HOME or XDG_DATA_HOME, or provide an absolute SAVE_DIR"); return; }
     }

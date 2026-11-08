@@ -19,6 +19,14 @@ This source repository contains no game executable, DLL, assets, saves, lifted g
 
 This remains experimental. Broad gameplay, mod compatibility, other executable versions and other Linux distributions have not been validated. Native dependencies are resolved from the host system; a packaged game folder is not a universal AppImage.
 
+## Experimental SKSE compatibility
+
+Build with `JOBS=16 LB_GEN_JOBS=16 sh desktop/build.sh -DSKYDREAM_SKSE=ON` for the independent classic Papyrus compatibility layer. Add `-DSKYDREAM_SKYUI=ON` to enable the experimental SkyUI interface without launch scripts or environment variables. Both options are disabled by default.
+
+The layer registers 90 functions and provides native Scaleform, menu/input/mod-event bridges, extended inventory fields and translation loading. SkyUI 5.1 inventory and MCM have been tested, and the tester confirmed settings persistence. This remains partial compatibility: favorites, active effects and crafting require more work; Windows DLL plugins and SKSE co-saves are unsupported. See [scope, validation and build instructions](docs/SKSE_COMPATIBILITY.md).
+
+For a direct portable launch, place a `portable-profile` directory beside the game binary to keep settings, plugin lists and saves there. Without it, the default XDG profile is used. An explicit SAVE_DIR overrides both.
+
 ## Build dependencies
 
 On Debian/Ubuntu:

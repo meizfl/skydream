@@ -50,6 +50,8 @@ def main():
         'build-inputs.json': (json.dumps(hashes, indent=2) + '\n').encode(),
         'BUILD-INFO.json': (json.dumps({'source_revision': revision, 'platform': 'linux-x86_64',
                                       'build_host_libc': libc,
+                                      'skse_compatibility': ('experimental-papyrus-subset-0.1.0' if b'experimental Papyrus subset enabled (API 0.1.0)' in binary else 'disabled'),
+                                      'skyui_interface_enabled': b'SkyUI: experimental interface enabled by default' in binary,
                                       'contains_statically_recompiled_game_code': True,
                                       'contains_original_pe_images_or_assets': False}, indent=2) + '\n').encode(),
         'README.txt': b'''Skydream native Linux binary (experimental, locally built)\n
@@ -65,6 +67,9 @@ original PE images, game assets, saves, or the complete playable game.
 Required images: TESV.exe (and unpacked variant if applicable), d3dx9_42.dll,
 binkw32.dll, X3DAudio1_7.dll. See build-inputs.json for exact build hashes.
 Keep originals beside the binary, or *.pe images in lib/skyrim-native/guest.
+
+Optional SKSE compatibility is recorded in BUILD-INFO.json and --help.
+It is incomplete: Windows DLL plugins and SKSE co-saves are unsupported. This is not a full SKSE distribution.
 
 This build uses the host's SDL2, Vulkan loader, FFmpeg and C/C++ runtime.
 See NEEDED.txt for exact linked library SONAMEs. It is not a universal binary

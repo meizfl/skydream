@@ -306,6 +306,10 @@ static void poll_key_fifo(void) {
     while (fgets(line, sizeof line, fifo)) {
         char name[32] = "";
         int len = 8;
+        if (!strncmp(line,"shot ",5)) {
+            extern void bridge_request_capture(const char *);
+            line[strcspn(line,"\n")]=0;bridge_request_capture(line+5);continue;
+        }
         if (!strncmp(line, "dump ", 5)) {  /* "dump <file>": save the exe's data sections */
             line[strcspn(line, "\n")] = 0;
             FILE *d = fopen(line + 5, "wb");
@@ -324,6 +328,9 @@ static void poll_key_fifo(void) {
 }
 
 void platform_present_hook(void) {
+#ifdef SKYDREAM_SKSE
+    extern void skse_ui_pump(void); skse_ui_pump();
+#endif
     SDL_Event e;
     poll_key_fifo();
     while (SDL_PollEvent(&e)) {

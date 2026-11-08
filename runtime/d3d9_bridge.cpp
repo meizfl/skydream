@@ -456,6 +456,40 @@ static void bisect_present(void) {
     g_bisect = g_frame >= g_bisect_from && g_frame < g_bisect_from + 160;
 }
 
+// Test-only FIFO capture reads the render target itself, so it also works
+// under native Wayland without screen-recording permissions or desktop pixels.
+static char g_frame_capture[4096];
+extern "C" void bridge_request_capture(const char *path) {
+    snprintf(g_frame_capture,sizeof g_frame_capture,"%s",path);
+}
+static void capture_frame(IDirect3DDevice9 *device) {
+    if(!g_frame_capture[0]) return;
+    char path[4096];snprintf(path,sizeof path,"%s",g_frame_capture);g_frame_capture[0]=0;
+    IDirect3DSurface9 *source=nullptr,*copy=nullptr;
+    D3DSURFACE_DESC desc={};D3DLOCKED_RECT lock={};
+    HRESULT hr=device->GetBackBuffer(0,0,D3DBACKBUFFER_TYPE_MONO,&source);
+    if(SUCCEEDED(hr)) hr=source->GetDesc(&desc);
+    if(SUCCEEDED(hr) && desc.Format!=D3DFMT_A8R8G8B8 && desc.Format!=D3DFMT_X8R8G8B8) hr=D3DERR_INVALIDCALL;
+    if(SUCCEEDED(hr)) hr=device->CreateOffscreenPlainSurface(desc.Width,desc.Height,desc.Format,D3DPOOL_SYSTEMMEM,&copy,nullptr);
+    if(SUCCEEDED(hr)) hr=device->GetRenderTargetData(source,copy);
+    if(SUCCEEDED(hr)) hr=copy->LockRect(&lock,nullptr,D3DLOCK_READONLY);
+    if(SUCCEEDED(hr)) {
+        FILE *file=fopen(path,"wb");
+        if(file) {
+            fprintf(file,"P6\n%u %u\n255\n",desc.Width,desc.Height);
+            std::vector<unsigned char> row(desc.Width*3);
+            for(unsigned y=0;y<desc.Height;y++) {
+                const auto *pixels=(const unsigned char *)lock.pBits+y*lock.Pitch;
+                for(unsigned x=0;x<desc.Width;x++) {row[x*3]=pixels[x*4+2];row[x*3+1]=pixels[x*4+1];row[x*3+2]=pixels[x*4];}
+                fwrite(row.data(),1,row.size(),file);
+            }
+            fclose(file);LOG("frame capture: %s",path);
+        }
+        copy->UnlockRect();
+    } else LOG("frame capture failed: %08x",(unsigned)hr);
+    if(copy) copy->Release();if(source) source->Release();
+}
+
 void B_IDirect3DDevice9_Present(CPU *c) {
     auto *d = (IDirect3DDevice9 *)com_host(ARG(0));
     if (g_trace_from < 0) {
@@ -471,6 +505,7 @@ void B_IDirect3DDevice9_Present(CPU *c) {
     { extern void hud_screen_present(IDirect3DDevice9 *); hud_screen_present(d); }
     RECT vr = view_rect();
     const RECT *dst = ARG(2) ? (const RECT *)GPTR(ARG(2)) : (vr.left || vr.top) ? &vr : nullptr;
+    capture_frame(d);
     HRESULT hr = d->Present((const RECT *)GPTR(ARG(1)), dst, nullptr, (const RGNDATA *)GPTR(ARG(4)));
     platform_present_hook();
     bisect_present();

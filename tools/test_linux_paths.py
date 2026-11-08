@@ -1,4 +1,3 @@
-# SPDX-License-Identifier: GPL-3.0-only
 """Direct executable launches must locate game files independently of cwd."""
 import os
 import pathlib
@@ -12,7 +11,7 @@ class LinuxPathsTest(unittest.TestCase):
         root = pathlib.Path(__file__).resolve().parents[1]
         source = (root / 'runtime/main.c').read_text()
         start = source.index('static void linux_paths(')
-        function = source[start:source.index('\n#endif', start)]
+        function = source[start:source.index('\n}\n#endif', start) + 2]
         code = '''#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,5 +63,12 @@ int main(int argc, char **argv) {
             linked.symlink_to(exe)
             result = subprocess.run([str(linked)], cwd='/', env=env, text=True, capture_output=True, check=True)
             self.assertEqual(result.stdout.splitlines()[0], str(game))
+            portable = game / 'portable-profile'
+            portable.mkdir()
+            result = subprocess.run([str(linked)], cwd='/', env=env, text=True, capture_output=True, check=True)
+            self.assertEqual(result.stdout.splitlines(), [str(game), str(portable)])
+            result = subprocess.run([str(exe), str(game), './custom-save'], cwd=base,
+                                    env=env, text=True, capture_output=True, check=True)
+            self.assertEqual(result.stdout.splitlines(), [str(game), str(base / 'custom-save')])
             result = subprocess.run([str(exe), '--help'], text=True, capture_output=True, check=True)
             self.assertIn('[GAME_DIR [SAVE_DIR]]', result.stdout)
