@@ -109,6 +109,23 @@ python3 -m unittest discover -s tools -p 'test_*.py'
 
 Tests use synthetic inputs and temporary files: discovery determinism, guest memory visibility, INI sections, launch paths/backend overrides, menu capture policy, session backend selection and xWMA decoding. They do not require or include Skyrim assets.
 
+## Downloadable artifacts
+
+Each successful GitHub Actions run uploads a runtime-check archive (DXVK only), a source archive and reports with build/test logs and SHA-256 checksums. Reports are also uploaded on failures. Artifacts are retained for 30 days. The runtime-check archive is not a playable game binary: CI has no original game inputs or generated game code.
+
+A native executable built locally can be packaged separately, without game assets or PE images:
+
+```sh
+cmake --install desktop/build --prefix "$PWD/build/install"
+python3 desktop/make-artifact.py \
+    --binary build/install/bin/lb \
+    --dxvk build/install/lib/skyrim-native/libdxvk_d3d9.so \
+    --inputs-manifest analysis/linux-inputs.json \
+    --output dist/skydream-linux-x86_64.tar.gz
+```
+
+This separate archive contains the native `Skydream` executable, DXVK, build/input metadata, licensing notices and checksums. It contains statically recompiled game code, but no original game images or assets; users still supply matching game files. System SDL2, FFmpeg and Vulkan dependencies must match the build host ABI, as listed in the archive. The CI source archive does not contain this locally generated binary.
+
 ## Layout and provenance
 
 - `runtime/`: host API shims, input, audio, graphics bridge and game hooks.

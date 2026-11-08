@@ -29,3 +29,5 @@ __pycache__/
 *.ess
 *.skse
 *.whl
+
+/dist/

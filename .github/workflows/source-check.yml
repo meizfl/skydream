@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
-name: Source checks
-on: [push, pull_request]
+name: Source checks and artifacts
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
 jobs:
   linux:
     runs-on: ubuntu-24.04
@@ -9,12 +11,56 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Prepare reports
+        run: |
+          mkdir -p dist
+          { git rev-parse HEAD; uname -sm; } > dist/BUILD-INFO.txt
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config libsdl2-dev libvulkan-dev libavcodec-dev libavutil-dev libswresample-dev ffmpeg
           python3 -m pip install -r requirements.txt
       - name: Test synthetic inputs
-        run: python3 -m unittest discover -s tools -p 'test_*.py'
+        run: |
+          set -o pipefail
+          python3 -m unittest discover -v -s tools -p 'test_*.py' 2>&1 | tee dist/tests.log
       - name: Build host runtime and DXVK without game files
-        run: JOBS=2 sh desktop/build.sh -DLB_BUILD_GAME=OFF
+        run: |
+          set -o pipefail
+          JOBS=2 sh desktop/build.sh -DLB_BUILD_GAME=OFF 2>&1 | tee dist/build.log
+      - name: Package runtime check and sources
+        run: |
+          mkdir -p dist/runtime-check/lib
+          cp desktop/build/dxvk/libdxvk_d3d9.so dist/runtime-check/lib/
+          cp LICENSE NOTICE.md dist/runtime-check/
+          cp third_party/dxvk/LICENSE dist/runtime-check/DXVK-LICENSE
+          cp dist/BUILD-INFO.txt dist/runtime-check/
+          printf '%s\n' 'Host-runtime build check: DXVK library only, not a playable Skyrim executable.' > dist/runtime-check/README.txt
+          tar -czf dist/skydream-runtime-check-linux-x86_64.tar.gz -C dist/runtime-check .
+          git archive --format=tar.gz --prefix=skydream-source/ --output=dist/skydream-source.tar.gz HEAD
+          sha256sum dist/*.tar.gz > dist/SHA256SUMS
+      - name: Upload runtime check
+        uses: actions/upload-artifact@v4
+        with:
+          name: skydream-runtime-check-linux-x86_64-${{ github.sha }}
+          path: dist/skydream-runtime-check-linux-x86_64.tar.gz
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: skydream-source-${{ github.sha }}
+          path: dist/skydream-source.tar.gz
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: skydream-reports-${{ github.sha }}
+          path: |
+            dist/*.log
+            dist/BUILD-INFO.txt
+            dist/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 30
