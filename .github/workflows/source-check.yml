@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: GPL-3.0-only
+name: Source checks
+on: [push, pull_request]
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libsdl2-dev libvulkan-dev libavcodec-dev libavutil-dev libswresample-dev ffmpeg
+          python3 -m pip install -r requirements.txt
+      - name: Test synthetic inputs
+        run: python3 -m unittest discover -s tools -p 'test_*.py'
+      - name: Build host runtime and DXVK without game files
+        run: JOBS=2 sh desktop/build.sh -DLB_BUILD_GAME=OFF
