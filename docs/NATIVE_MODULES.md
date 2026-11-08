@@ -116,3 +116,5 @@ The test enforces this bound, verifies dimensions and exact PCM, and checks
 that required decoders/demuxer are actually present in minimal FFmpeg builds.
 
 D3DX9 helper replacement is described in [NATIVE_D3DX.md](NATIVE_D3DX.md). Skyrim now needs only TESV.exe.pe as a guest memory image.
+
+The external TESV image has also been removed from runtime requirements; see [EMBEDDED_GAME.md](EMBEDDED_GAME.md).

@@ -1,0 +1,7 @@
+/* Link-time compatibility data; contains no host instructions. */
+.section .rodata
+.balign 16
+.global g_skyrim_image_blob
+g_skyrim_image_blob:
+.incbin "@SKYDREAM_IMAGE_BLOB@"
+.section .note.GNU-stack,""

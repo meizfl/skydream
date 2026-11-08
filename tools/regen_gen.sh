@@ -20,4 +20,5 @@ export LIFT_GAME=skyrim
 # discover.py imports peimg.py from tools/, so run it from there.
 (cd tools && python3 discover.py "$EXE" ../analysis/functions.json)
 python3 tools/lift.py "$EXE" analysis/functions.json gen exe
+python3 tools/embed_game_image.py "$EXE" gen/image
 echo "gen/ is ready"

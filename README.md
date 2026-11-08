@@ -73,7 +73,7 @@ JOBS=2 LB_GEN_JOBS=2 sh desktop/build.sh -DLB_BUILD_GAME=ON
 ./desktop/run.sh ./GAME
 ```
 
-Discovery and lifting produce local `analysis/` and `gen/` directories. The generation script also records hashes in `analysis/linux-inputs.json`; the packer checks these against the game images it packages. These directories are ignored by Git and must not be published.
+Discovery and lifting produce local `analysis/` and `gen/` directories. The generation script also records hashes in `analysis/linux-inputs.json`; these record build-time provenance. Link-time initialization data is also generated under `gen/image/`. These directories are ignored by Git and must not be published.
 
 To check the runtime and DXVK build without any game inputs:
 
@@ -105,7 +105,7 @@ python3 desktop/package.py ./GAME ./build/Skyrim-Linux
 
 The packer leaves the original installation intact and refuses to overwrite an existing output directory. It copies game data, INIs, the native executable and DXVK into a directory that can be moved as a whole. A direct executable launch locates the game beside itself, independently of the working directory. Saves remain in the XDG directory.
 
-Four required original memory images are retained as `lib/skyrim-native/guest/*.pe`; the statically compiled code still needs their initial memory contents, tables and resources. Removing these images is not implemented. Unused Windows launchers, installers and Steam DLLs are omitted.
+No external PE images are required at runtime. TESV-derived initialization data is linked into the ELF during the build; only `Data/` and native libraries accompany the executable. See [link-time game data](docs/EMBEDDED_GAME.md).
 
 **The resulting package contains game files and compiled game code. It is for your own installation, not for committing or uploading to this source repository.**
 
@@ -122,7 +122,7 @@ Tests use synthetic inputs and temporary files: discovery determinism, guest mem
 
 Each successful GitHub Actions run uploads a runtime-check archive (DXVK only), a source archive and reports with build/test logs and SHA-256 checksums. Reports are also uploaded on failures. Artifacts are retained for 30 days. The runtime-check archive is not a playable game binary: CI has no original game inputs or generated game code.
 
-A native executable built locally can be packaged separately, without game assets or PE images:
+A native executable built locally can be packaged separately, without the Data directory or external PE files:
 
 ```sh
 cmake --install desktop/build --prefix "$PWD/build/install"
@@ -133,7 +133,7 @@ python3 desktop/make-artifact.py \
     --output dist/skydream-linux-x86_64.tar.gz
 ```
 
-This separate archive contains the native `Skydream` executable, DXVK, build/input metadata, licensing notices and checksums. It contains statically recompiled game code, but no original game images or assets; users still supply matching game files. System SDL2, FFmpeg and Vulkan dependencies must match the build host ABI, as listed in the archive. The CI source archive does not contain this locally generated binary.
+This separate archive contains the native `Skydream` executable, DXVK, build/input metadata, licensing notices and checksums. It contains statically recompiled game code and original TESV-derived initialization data/resources embedded in ELF; users still supply their matching Data folder. System SDL2, FFmpeg and Vulkan dependencies must match the build host ABI, as listed in the archive. The CI source archive does not contain this locally generated binary.
 
 ## Layout and provenance
 

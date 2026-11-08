@@ -1,6 +1,5 @@
-/* Host entry: maps guest memory, loads the game executable's sections and runs
- * the recompiled entry point. The exe itself is read from the user's game
- * directory at runtime; nothing from it is embedded in the build. */
+/* Host entry: initializes compatibility memory and runs recompiled game code.
+ * Skyrim data is linked into the ELF; legacy loaders remain for other games. */
 #define _GNU_SOURCE
 #include "game.h"
 #include "rt.h"
@@ -46,6 +45,7 @@ void rt_fatal(const char *fmt, ...) {
     abort();
 }
 
+#if !defined(SKYDREAM_EMBEDDED_IMAGE)
 static uint16_t rd16(const uint8_t *p) { return (uint16_t)(p[0] | p[1] << 8); }
 static uint32_t rd32(const uint8_t *p) { return p[0] | p[1] << 8 | p[2] << 16 | (uint32_t)p[3] << 24; }
 
@@ -178,7 +178,11 @@ static uint32_t load_pe(const char *path, uint32_t want_base, const char *modnam
     return entry;
 }
 
+/* End of the loader used by other game targets. */
+#endif /* legacy PE loader */
+
 /* Exercise native Bink decoding through the real guest stdcall thunks. */
+
 static int bink_test(CPU *c, const char *movie, const char *outdir) {
     uint32_t name = gstrdup(movie);
     uint32_t a2[2] = {name, 0};
@@ -313,8 +317,10 @@ void rt_altstack(void) {}
 /* Fails with a message naming exactly what is missing from the game folder. */
 static int file_present(const char *name) {
     static const char *const k_dirs[] = {"", "redist/", "Redist/", "REDIST/", NULL};
+#ifndef SKYDREAM_EMBEDDED_IMAGE
     FILE *image = open_guest_image(name);
     if (image) { fclose(image); return 1; }
+#endif
     char lower[256];
     snprintf(lower, sizeof lower, "%s", name);
     for (char *q = lower; *q; q++) *q = (char)tolower((unsigned char)*q);
@@ -355,7 +361,11 @@ static void check_game_dir(void) {
                  GAME_TITLE " install folder into it.", g_game_dir, why, strerror(e));
     }
 #ifdef GAME_SKYRIM
+#ifdef SKYDREAM_EMBEDDED_IMAGE
+    static const char *const k_need[] = {"Data", NULL};
+#else
     static const char *const k_need[] = {GAME_EXE, "Data", NULL};
+#endif
 #else
     static const char *const k_need[] = {GAME_EXE, DLL_D3DX9, DLL_EXTRA, NULL};
 #endif
@@ -426,7 +436,7 @@ static void linux_paths(int argc, char **argv) {
                 "Default: select Wayland or X11 from the desktop session.\n"
                 "--wayland: force native Wayland; --x11: force X11/XWayland.\n"
                 "Without GAME_DIR, uses the folder containing this executable.\n"
-                "Requires Skyrim 2011 (TESV.exe), not Special Edition.\n"
+                "Requires Skyrim 2011 Data, not Special Edition. No external PE images are needed.\n"
                 "Default saves: $XDG_DATA_HOME/skyrim-native/save\n"
                 "              or $HOME/.local/share/skyrim-native/save\n", program);
 #ifdef SKYDREAM_SKSE
@@ -578,6 +588,9 @@ int main(int argc, char **argv) {
     rt_thread_init(c);
     { extern void prof_start(void); prof_start(); }
     if (argc > 4 && !strcmp(argv[3], "--bink-test")) return bink_test(c, argv[4], argc > 5 ? argv[5] : ".");
+#ifdef SKYDREAM_EMBEDDED_IMAGE
+    { extern void rt_load_embedded_game(void); rt_load_embedded_game(); }
+#else
     /* DLLs first so the exe's imports bind to their exports */
     extern const char *const g_dll_modules[];
     extern const uint32_t g_dll_bases[];
@@ -586,14 +599,18 @@ int main(int argc, char **argv) {
     for (; g_dll_modules[ndll]; ndll++)
         dll_entries[ndll] = load_pe(g_dll_modules[ndll], g_dll_bases[ndll], g_dll_modules[ndll]);
     load_pe(GAME_EXE, 0, GAME_EXE);
+
+#endif
     extern void touch_setup_guest(void);
     touch_setup_guest();
     { extern void hud_screen_setup_guest(void); hud_screen_setup_guest(); }
+#ifndef SKYDREAM_EMBEDDED_IMAGE
     for (int i = 0; i < ndll; i++) {
         uint32_t args[3] = {g_dll_bases[i], 1, 0};
         if (dll_entries[i] && !rt_invoke(c, dll_entries[i], 3, args))
             rt_fatal("DllMain of %s failed", g_dll_modules[i]);
     }
+#endif
     /* push a return address that ends the process when main returns */
     c->r[4] -= 4;
     M32(c->r[4]) = 0;

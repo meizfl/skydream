@@ -54,20 +54,21 @@ def main():
                                       'skse_compatibility': ('experimental-papyrus-subset-0.1.0' if b'experimental Papyrus subset enabled (API 0.1.0)' in binary else 'disabled'),
                                       'skyui_interface_enabled': b'SkyUI: experimental interface enabled by default' in binary,
                                       'contains_statically_recompiled_game_code': True,
-                                      'contains_original_pe_images_or_assets': False}, indent=2) + '\n').encode(),
+                                      'contains_external_pe_images': False,
+                                      'contains_original_game_initialization_data': True}, indent=2) + '\n').encode(),
         'README.txt': b'''Skydream native Linux binary (experimental, locally built)\n
 Extract the archive and copy the contents of its Skydream folder into your
 own matching Skyrim 2011 installation. Keep the Skydream executable beside
-Data and the original TESV/DLL inputs. Run ./Skydream.
+Data. Run ./Skydream.
 Alternatively copy Skydream and lib into an existing private Linux game pack.
 F11 toggles fullscreen; Wayland/X11 are selected automatically.
 Overrides: ./Skydream --wayland or ./Skydream --x11.
 
-This archive contains statically recompiled game code. It does not contain
-original PE images, game assets, saves, or the complete playable game.
-Required image: TESV.exe (and unpacked variant if applicable).
+This archive contains statically recompiled game code and TESV-derived
+initialization data/resources embedded in ELF. Data archives, saves and the
+complete playable game are not included. No external PE image is required.
 D3DX uses native image/math code and vkd3d-shader; Bink uses native FFmpeg and X3DAudio uses native F3DAudio; their PE images are not needed. See build-inputs.json for exact build hashes.
-Keep originals beside the binary, or *.pe images in lib/skyrim-native/guest.
+The original TESV executable is needed only when generating a build.
 
 Optional SKSE compatibility is recorded in BUILD-INFO.json and --help.
 It is incomplete: Windows DLL plugins and SKSE co-saves are unsupported. This is not a full SKSE distribution.
@@ -90,6 +91,7 @@ by the project's GPL notice.
     for name in ('vkd3d-2.0.tar.xz','spirv-headers.tar.gz','vulkan-headers.tar.gz'):
         files['sources/'+name] = (ROOT/'build/native-shader-source'/name).read_bytes()
     files['sources/build-native-shader.sh'] = (ROOT/'tools/build-native-shader.sh').read_bytes()
+    files['embedded-game.json'] = (ROOT/'gen/image/skyrim_image.json').read_bytes()
     needed = []
     for label, path in [('Skydream', args.binary), ('libdxvk_d3d9.so', args.dxvk)]:
         output = subprocess.check_output(['readelf', '-d', str(path)], text=True)

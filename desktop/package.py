@@ -9,26 +9,6 @@ import subprocess
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-MODULES = ('TESV.exe',)
-
-
-def find_file(source, name):
-    directories = (source, source / 'redist', source / 'Redist', source / 'REDIST',
-                   source / 'lib/skyrim-native/guest')
-    names = [name]
-    if name == 'TESV.exe':
-        names = ['TESV.exe.unpacked.exe', 'TESV_unpacked.exe', name]
-    for directory in directories:
-        if not directory.is_dir():
-            continue
-        entries = {p.name.lower(): p for p in directory.iterdir()}
-        for candidate in names:
-            for suffix in ('', '.pe'):
-                path = entries.get((candidate + suffix).lower())
-                if path and path.is_file():
-                    return path
-    raise ValueError(f'Missing required image: {name}')
-
 
 def package(source, destination):
     source = source.resolve(strict=True)
@@ -39,31 +19,26 @@ def package(source, destination):
         raise ValueError('Source must contain Skyrim 2011 Data/Skyrim.esm')
     if source == destination or source in destination.resolve().parents:
         raise ValueError('Destination must be outside the source game folder')
-    manifest = json.loads((ROOT / 'analysis/linux-inputs.json').read_text())
-    images = {}
-    for name in MODULES:
-        path = find_file(source, name)
-        digest = hashlib.sha1(path.read_bytes()).hexdigest()
-        if digest != manifest[name]['sha1']:
-            raise ValueError(f'{path}: image differs from the version used to build this port')
-        images[name] = path
     destination.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.skyrim-package-', dir=destination.parent) as tmp:
         work = pathlib.Path(tmp)
         install = work / 'install'
         subprocess.run(['cmake', '--install', str(ROOT / 'desktop/build'), '--prefix', str(install)], check=True)
         output = work / 'game'
-        guest = output / 'lib/skyrim-native/guest'
-        guest.mkdir(parents=True)
-        shutil.copy2(install / 'bin/lb', output / 'Skyrim')
+        native_lib = output / 'lib/skyrim-native'
+        native_lib.mkdir(parents=True)
+        binary=install/'bin/lb'
+        if b'embedded Skyrim:' not in binary.read_bytes():
+            raise ValueError('Package requires a binary with embedded game data')
+        shutil.copy2(binary, output / 'Skyrim')
         libraries = list(install.glob('lib*/skyrim-native/libdxvk_d3d9.so'))
         if len(libraries) != 1:
             raise ValueError('Installed DXVK library not found')
-        shutil.copy2(libraries[0], guest.parent / libraries[0].name)
+        shutil.copy2(libraries[0], native_lib / libraries[0].name)
         shader=ROOT/'build/native-shader/lib/libvkd3d-shader.so.1'
         if not shader.is_file():
             raise ValueError('Build native HLSL compiler first: sh tools/build-native-shader.sh')
-        shutil.copy2(shader,guest.parent/shader.name)
+        shutil.copy2(shader,native_lib/shader.name)
         (output / 'licenses').mkdir()
         shutil.copy2(ROOT / 'third_party/f3daudio/LICENSE', output / 'licenses/F3DAudio-LICENSE')
         for dep,license_name in [('stb','stb-LICENSE'),('vkd3d','vkd3d-LGPL-2.1.txt')]:
@@ -73,10 +48,6 @@ def package(source, destination):
         for name in ('vkd3d-2.0.tar.xz','spirv-headers.tar.gz','vulkan-headers.tar.gz'):
             shutil.copy2(ROOT/'build/native-shader-source'/name,sources/name)
         shutil.copy2(ROOT/'tools/build-native-shader.sh',sources/'build-native-shader.sh')
-        for name, path in images.items():
-            target = guest / (name + '.pe')
-            shutil.copy2(path, target)
-            target.chmod(0o644)
         for path in source.glob('*.ini'):
             shutil.copy2(path, output / path.name)
         print('Copying Data (reflink when supported, otherwise a full copy)...', flush=True)
@@ -89,10 +60,9 @@ def package(source, destination):
             'F11: fullscreen. Saves: $XDG_DATA_HOME/skyrim-native/save or\n'
             '$HOME/.local/share/skyrim-native/save. Existing saves are not copied.\n'
             'Requires Linux x86-64, Vulkan graphics driver, SDL2, FFmpeg libraries.\n'
-            'lib/skyrim-native/guest contains required original memory images; do not remove.\n'
+            'Game initialization data is linked into the ELF; no external PE images are required.\n'
             'The game code runs as native compiled Linux code without Wine.\n')
-        (output / 'linux-images.json').write_text(json.dumps(
-            {name: {'sha1': manifest[name]['sha1']} for name in MODULES}, indent=2) + '\n')
+        shutil.copy2(ROOT/'gen/image/skyrim_image.json',output/'embedded-game.json')
         if any(path.is_symlink() for path in output.rglob('*')):
             raise ValueError('Package contains symlinks and would not be self-contained')
         output.rename(destination)
