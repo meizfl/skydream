@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# SPDX-License-Identifier: GPL-3.0-only
 """Create a relocatable Linux game folder without modifying the source install."""
 import argparse
 import hashlib
@@ -10,7 +9,7 @@ import subprocess
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-MODULES = ('TESV.exe', 'd3dx9_42.dll', 'binkw32.dll', 'X3DAudio1_7.dll')
+MODULES = ('TESV.exe', 'd3dx9_42.dll', 'binkw32.dll')
 
 
 def find_file(source, name):
@@ -61,6 +60,8 @@ def package(source, destination):
         if len(libraries) != 1:
             raise ValueError('Installed DXVK library not found')
         shutil.copy2(libraries[0], guest.parent / libraries[0].name)
+        (output / 'licenses').mkdir()
+        shutil.copy2(ROOT / 'third_party/f3daudio/LICENSE', output / 'licenses/F3DAudio-LICENSE')
         for name, path in images.items():
             target = guest / (name + '.pe')
             shutil.copy2(path, target)

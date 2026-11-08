@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-only
 cmake_minimum_required(VERSION 3.18)
 project(skyrim_linux LANGUAGES C CXX)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/f3daudio/LICENSE"
+        DESTINATION "share/licenses/skydream" RENAME "F3DAudio-LICENSE")
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(FATAL_ERROR "This port requires 64-bit Linux")
@@ -31,7 +33,7 @@ set(LB_GEN_JOBS 2 CACHE STRING "Maximum simultaneous generated-code compilations
 set_property(GLOBAL PROPERTY JOB_POOLS generated=${LB_GEN_JOBS})
 if(LB_BUILD_GAME)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
-    foreach(module exe d3dx9 bink x3da)
+    foreach(module exe d3dx9 bink)
         if(NOT EXISTS "${PORT}/gen/${module}_table.c")
             message(FATAL_ERROR "Missing gen/${module}_table.c. Run: sh tools/regen_gen.sh GAME_DIR. Use -DLB_BUILD_GAME=OFF to check DXVK and the host runtime only.")
         endif()
@@ -46,7 +48,7 @@ endif()
 add_subdirectory("${PORT}/third_party/dxvk" dxvk)
 set_target_properties(dxvk_d3d9 PROPERTIES INSTALL_RPATH "$ORIGIN")
 file(GLOB RT_SRC CONFIGURE_DEPENDS "${PORT}/runtime/*.c" "${PORT}/runtime/*.cpp")
-add_library(lb_runtime OBJECT ${RT_SRC})
+add_library(lb_runtime OBJECT ${RT_SRC} "${PORT}/third_party/f3daudio/F3DAudio.c")
 target_include_directories(lb_runtime PRIVATE "${PORT}/runtime" "${PORT}/gen")
 target_compile_definitions(lb_runtime PRIVATE GAME_SKYRIM DXVK_NATIVE LB_HAVE_FFMPEG)
 if(SKYDREAM_SKSE)
@@ -64,6 +66,7 @@ target_link_libraries(lb_runtime PRIVATE SDL2::SDL2 dxvk_d3d9 Threads::Threads P
 
 if(LB_BUILD_GAME)
     file(GLOB GEN_SRC CONFIGURE_DEPENDS "${PORT}/gen/*.c")
+    list(FILTER GEN_SRC EXCLUDE REGEX "/x3da_[^/]*\\.c$")
     add_library(lb_generated OBJECT ${GEN_SRC})
     set_property(TARGET lb_generated PROPERTY JOB_POOL_COMPILE generated)
     target_include_directories(lb_generated PRIVATE "${PORT}/runtime" "${PORT}/gen")

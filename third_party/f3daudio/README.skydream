@@ -1,0 +1,7 @@
+F3DAudio subset of FAudio 26.10
+Upstream: https://github.com/FNA-XNA/FAudio
+Commit: 6839b88e304a046ae1a609ff14a085371e02a4e0
+License: zlib; retained in LICENSE and source headers.
+Modification: replace FAudio_internal.h include with a standalone libc/math adapter.
+No SDL or XAudio mixer dependency is needed for this spatial math module.
+Upstream does not implement CALCULATE_DELAY; the bridge rejects that flag explicitly.

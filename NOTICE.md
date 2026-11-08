@@ -15,3 +15,5 @@ SDL2 and FFmpeg are linked from the system installation rather than vendored her
 The Elder Scrolls, Skyrim and Bethesda names and game assets belong to their respective owners. This repository contains host runtime/tool sources, not the game or generated game code. Build inputs, generated outputs and private game packages remain local and are ignored by Git.
 
 The optional `SKYDREAM_SKSE` feature is an independent, incomplete implementation of classic Papyrus extension interfaces. No original SKSE code, binaries or scripts are included or relicensed. The original SKSE package has separate distribution restrictions. See docs/SKSE_COMPATIBILITY.md.
+
+Native spatial audio uses a vendored F3DAudio subset from FAudio 26.10, commit 6839b88e304a046ae1a609ff14a085371e02a4e0, under its original zlib license. It is not relicensed as original Skydream code. See third_party/f3daudio/LICENSE and README.skydream for attribution and modifications.

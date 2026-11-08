@@ -467,8 +467,5 @@ void skyrim_seed_prefs(int w, int h) {
 
 void skyrim_shims_init(void) {
     rt_register_shims(defs);
-    /* X3DAudio1_7 imports msvcrt's _adjust_fdiv (Pentium FDIV flag): 0 */
-    uint32_t p = gmalloc(4);
-    M32(p) = 0;
-    rt_register_data("msvcrt.dll", "_adjust_fdiv", p);
+
 }

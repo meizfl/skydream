@@ -357,7 +357,7 @@ static void check_game_dir(void) {
                  GAME_TITLE " install folder into it.", g_game_dir, why, strerror(e));
     }
 #ifdef GAME_SKYRIM
-    static const char *const k_need[] = {GAME_EXE, DLL_D3DX9, DLL_EXTRA, "X3DAudio1_7.dll", "Data", NULL};
+    static const char *const k_need[] = {GAME_EXE, DLL_D3DX9, DLL_EXTRA, "Data", NULL};
 #else
     static const char *const k_need[] = {GAME_EXE, DLL_D3DX9, DLL_EXTRA, NULL};
 #endif
