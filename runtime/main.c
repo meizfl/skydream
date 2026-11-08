@@ -178,12 +178,8 @@ static uint32_t load_pe(const char *path, uint32_t want_base, const char *modnam
     return entry;
 }
 
-/* Decodes a movie with the recompiled binkw32 only and writes a few frames
- * as PPM files: isolates Bink/MMX lifting problems from the game. */
+/* Exercise native Bink decoding through the real guest stdcall thunks. */
 static int bink_test(CPU *c, const char *movie, const char *outdir) {
-    uint32_t e = load_pe("binkw32.dll", 0x09000000u, "binkw32.dll");
-    uint32_t a3[3] = {0x09000000u, 1, 0};
-    rt_invoke(c, e, 3, a3);
     uint32_t name = gstrdup(movie);
     uint32_t a2[2] = {name, 0};
     uint32_t bink = rt_invoke(c, rt_import("binkw32.dll", "_BinkOpen@8"), 2, a2);
@@ -211,7 +207,9 @@ static int bink_test(CPU *c, const char *movie, const char *outdir) {
         }
         rt_invoke(c, rt_import("binkw32.dll", "_BinkNextFrame@4"), 1, a1);
     }
-    return 0;
+    uint32_t close_args[]={bink};
+    rt_invoke(c,rt_import("binkw32.dll","_BinkClose@4"),1,close_args);
+    gfree(buf);gfree(name);return 0;
 }
 
 #if defined(__GLIBC__)
@@ -357,7 +355,7 @@ static void check_game_dir(void) {
                  GAME_TITLE " install folder into it.", g_game_dir, why, strerror(e));
     }
 #ifdef GAME_SKYRIM
-    static const char *const k_need[] = {GAME_EXE, DLL_D3DX9, DLL_EXTRA, "Data", NULL};
+    static const char *const k_need[] = {GAME_EXE, DLL_D3DX9, "Data", NULL};
 #else
     static const char *const k_need[] = {GAME_EXE, DLL_D3DX9, DLL_EXTRA, NULL};
 #endif

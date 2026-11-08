@@ -7,7 +7,7 @@ a time. This is separate from static recompilation of TESV itself.
 | --- | --- | --- |
 | TESV 1.9.32 | Statically recompiled Linux code, original memory image | Yes |
 | D3DX9 helper | Statically recompiled code, original memory image | Yes |
-| Bink video | Statically recompiled code, original memory image | Yes |
+| Bink video/audio | Native FFmpeg decoder and SDL audio, stdcall adapter | **No** |
 | X3DAudio | Native F3DAudio C math and 32-bit guest ABI adapter | **No** |
 
 ## X3DAudio
@@ -66,3 +66,51 @@ in the exercised Skyrim path. The bridge supports up to 64 source channels
 and 8 destination channels, matching the current mixer's output limit.
 Listening tests and more gameplay, especially multichannel spatial sources,
 remain useful; these tests do not establish perfect audio parity everywhere.
+
+## Bink replacement (2026-11-09)
+
+Skyrim imports BinkOpen, BinkDoFrame, BinkCopyToBufferRect, BinkNextFrame,
+BinkWait, BinkPause, BinkClose, BinkSetSoundSystem and BinkOpenDirectSound.
+These are native stdcall shims; BinkCopyToBuffer is also available for the
+standalone diagnostic. BinkOpenDirectSound/SetSoundSystem select the native
+SDL sound path; no DirectSound DLL or guest callback is needed.
+
+The guest HBINK prefix contains dimensions, frame count, 1-based frame index
+and rational frame rate. The host owns demuxer/codec state and audio queues.
+BGRA copies honor source/destination coordinates, pitch and partial 256x256
+tiles. BinkWait uses monotonic timing; pause freezes both audio and video time.
+Closing releases decoders, PCM/video buffers, SDL device and guest handle.
+
+The loader, generated-source filter, regeneration and input manifests now
+require only TESV and D3DX9 PE images. Bink PE files left in an old pack are
+ignored. The `.bik` movie itself remains original game data and is still needed.
+
+Validation: BGS_Logo.bik decoded all 166 frames at 1280x720 and 24000/1001 fps,
+including 614400 stereo float samples at 44100 Hz. Selected frame hashes and
+the complete decoded audio matched the FFmpeg CLI byte for byte on the host.
+The game played all frames in 6883 ms, queued audio to a real SDL device, and
+the tester confirmed visible logo playback after partial-tile clipping was
+fixed. Native framebuffer capture also confirmed the rendered logo.
+
+The ordinary suite additionally checks codec/demuxer availability, invalid
+headers and partial-tile bounds. Set `SKYDREAM_BINK_TEST_MOVIE=/path/to/movie.bik`
+to enable private real-media verification; no movie is included in the repo.
+
+Linux builds now need libavformat and libswscale development packages in
+addition to libavcodec/libavutil/libswresample. A minimal FFmpeg 4.3 configure
+must enable `--enable-decoder=bink,binkaudio_dct,binkaudio_rdft` (the decoder
+selector is **bink**, not binkvideo), `--enable-demuxer=bink`,
+`--enable-protocol=file`, avformat and swscale. Portable packages must bundle
+libavformat.so.58 and libswscale.so.5 as well.
+
+Scope: sequential Bink 1 movies with their first audio track and BGRA output.
+This is not the entire Bink SDK: Bink 2, seeking/loop control, custom I/O,
+custom sound callbacks and other unregistered exports are not implemented.
+Android builds without FFmpeg cannot play movies through this decoder.
+
+Portable validation: the Debian 11 minimal FFmpeg build passed all 18 tests
+with the private movie enabled. Its scalar colorspace converter differed from
+the full system CLI's SIMD converter by at most 2 RGB quantization levels
+out of 255 on the selected frames; decoded audio matched byte for byte.
+The test enforces this bound, verifies dimensions and exact PCM, and checks
+that required decoders/demuxer are actually present in minimal FFmpeg builds.

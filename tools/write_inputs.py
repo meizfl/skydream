@@ -6,9 +6,9 @@ import json
 import pathlib
 import sys
 
-names = ('TESV.exe', 'd3dx9_42.dll', 'binkw32.dll')
-if len(sys.argv) != 5:
-    raise SystemExit('usage: write_inputs.py OUTPUT EXE D3DX BINK')
+names = ('TESV.exe', 'd3dx9_42.dll')
+if len(sys.argv) != 4:
+    raise SystemExit('usage: write_inputs.py OUTPUT EXE D3DX')
 inputs = {}
 for name, argument in zip(names, sys.argv[2:]):
     path = pathlib.Path(argument)

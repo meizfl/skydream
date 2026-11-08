@@ -18,7 +18,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libsdl2-dev libvulkan-dev libavcodec-dev libavutil-dev libswresample-dev ffmpeg
+          sudo apt-get install -y clang cmake ninja-build pkg-config libsdl2-dev libvulkan-dev libavcodec-dev libavutil-dev libswresample-dev libavformat-dev libswscale-dev ffmpeg
           python3 -m pip install -r requirements.txt
       - name: Test synthetic inputs
         run: |

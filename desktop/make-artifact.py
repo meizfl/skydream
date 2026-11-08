@@ -34,7 +34,7 @@ def main():
     if '$ORIGIN/lib/skyrim-native' not in dynamic:
         raise ValueError('Use the cmake-installed executable: portable RPATH is missing')
     inputs = json.loads(args.inputs_manifest.read_text())
-    required = ('TESV.exe', 'd3dx9_42.dll', 'binkw32.dll')
+    required = ('TESV.exe', 'd3dx9_42.dll')
     hashes = {name: {'sha1': inputs[name]['sha1']} for name in required}
     for record in hashes.values():
         if len(record['sha1']) != 40 or any(c not in '0123456789abcdef' for c in record['sha1']):
@@ -66,7 +66,7 @@ Overrides: ./Skydream --wayland or ./Skydream --x11.
 This archive contains statically recompiled game code. It does not contain
 original PE images, game assets, saves, or the complete playable game.
 Required images: TESV.exe (and unpacked variant if applicable), d3dx9_42.dll,
-binkw32.dll. X3DAudio uses native F3DAudio; no X3DAudio PE image is needed. See build-inputs.json for exact build hashes.
+Bink uses native FFmpeg and X3DAudio uses native F3DAudio; their PE images are not needed. See build-inputs.json for exact build hashes.
 Keep originals beside the binary, or *.pe images in lib/skyrim-native/guest.
 
 Optional SKSE compatibility is recorded in BUILD-INFO.json and --help.

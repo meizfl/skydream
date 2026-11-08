@@ -98,6 +98,7 @@ void marvel_shims_init(void);
 void skyrim_shims_init(void);
 void xaudio2_init(void);
 void x3daudio_init(void);
+void bink_init(void);
 
 void rt_init_shims(void) {
     k32_init();
@@ -112,4 +113,5 @@ void rt_init_shims(void) {
     skyrim_shims_init();
     xaudio2_init();
     x3daudio_init();
+    bink_init();
 }

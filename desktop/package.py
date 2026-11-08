@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-MODULES = ('TESV.exe', 'd3dx9_42.dll', 'binkw32.dll')
+MODULES = ('TESV.exe', 'd3dx9_42.dll')
 
 
 def find_file(source, name):

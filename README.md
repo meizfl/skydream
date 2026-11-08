@@ -14,6 +14,7 @@ This source repository contains no game executable, DLL, assets, saves, lifted g
 - Relative mouse camera control during gameplay; a free system cursor in menus and on focus loss.
 - SDL gamepads, hotplug, sticks, triggers, buttons and vibration; switching between controller and mouse/keyboard input.
 - PCM/ADPCM audio and FFmpeg decoding of xWMA dialogue/music.
+- Native Bink 1 video/audio playback through FFmpeg and SDL; no Bink PE image.
 - Native X3DAudio spatial math using the zlib-licensed F3DAudio module; no X3DAudio PE image. See [replacement scope and validation](docs/NATIVE_MODULES.md).
 - Parallel function discovery through `DISCOVER_JOBS`.
 - A relocatable game-folder packer with direct executable launch.
@@ -34,7 +35,7 @@ On Debian/Ubuntu:
 
 ```sh
 sudo apt install clang cmake ninja-build pkg-config python3-venv \
-    libsdl2-dev libvulkan-dev libavcodec-dev libavutil-dev libswresample-dev ffmpeg
+    libsdl2-dev libvulkan-dev libavcodec-dev libavutil-dev libswresample-dev libavformat-dev libswscale-dev ffmpeg
 python3 -m venv .venv
 . .venv/bin/activate
 python3 -m pip install -r requirements.txt
@@ -51,7 +52,6 @@ GAME/
   TESV.exe
   TESV_unpacked.exe
   d3dx9_42.dll
-  binkw32.dll
   Skyrim_Default.ini
   low.ini
   Data/
@@ -59,7 +59,7 @@ GAME/
     ...
 ```
 
-`TESV_unpacked.exe` must be the unpacked 32-bit TESV 1.9.32 executable corresponding to your installation. If your executable is already unpacked, a local copy named `TESV_unpacked.exe` is sufficient. This repository does not provide or obtain game files. The 32-bit D3DX9 DLL is a game/DirectX redistributable input, not a Wine builtin DLL. X3DAudio is implemented natively and its DLL is no longer required.
+`TESV_unpacked.exe` must be the unpacked 32-bit TESV 1.9.32 executable corresponding to your installation. If your executable is already unpacked, a local copy named `TESV_unpacked.exe` is sufficient. This repository does not provide or obtain game files. The 32-bit D3DX9 DLL is a game/DirectX redistributable input, not a Wine builtin DLL. Bink and X3DAudio are implemented natively and their DLL images are no longer required.
 
 The local Linux build was exercised with TESV SHA-1 `67a597df3bb8c5db94b9032f8179d29631b1145d`. Runtime hooks target Skyrim 1.9.32; changing the executable version requires checking those hooks, not just regenerating C.
 
