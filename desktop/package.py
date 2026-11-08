@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-MODULES = ('TESV.exe', 'd3dx9_42.dll')
+MODULES = ('TESV.exe',)
 
 
 def find_file(source, name):
@@ -60,8 +60,19 @@ def package(source, destination):
         if len(libraries) != 1:
             raise ValueError('Installed DXVK library not found')
         shutil.copy2(libraries[0], guest.parent / libraries[0].name)
+        shader=ROOT/'build/native-shader/lib/libvkd3d-shader.so.1'
+        if not shader.is_file():
+            raise ValueError('Build native HLSL compiler first: sh tools/build-native-shader.sh')
+        shutil.copy2(shader,guest.parent/shader.name)
         (output / 'licenses').mkdir()
         shutil.copy2(ROOT / 'third_party/f3daudio/LICENSE', output / 'licenses/F3DAudio-LICENSE')
+        for dep,license_name in [('stb','stb-LICENSE'),('vkd3d','vkd3d-LGPL-2.1.txt')]:
+            shutil.copy2(ROOT/'third_party'/dep/'LICENSE',output/'licenses'/license_name)
+        sources=output/'sources'
+        sources.mkdir()
+        for name in ('vkd3d-2.0.tar.xz','spirv-headers.tar.gz','vulkan-headers.tar.gz'):
+            shutil.copy2(ROOT/'build/native-shader-source'/name,sources/name)
+        shutil.copy2(ROOT/'tools/build-native-shader.sh',sources/'build-native-shader.sh')
         for name, path in images.items():
             target = guest / (name + '.pe')
             shutil.copy2(path, target)

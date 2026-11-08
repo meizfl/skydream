@@ -34,7 +34,7 @@ def main():
     if '$ORIGIN/lib/skyrim-native' not in dynamic:
         raise ValueError('Use the cmake-installed executable: portable RPATH is missing')
     inputs = json.loads(args.inputs_manifest.read_text())
-    required = ('TESV.exe', 'd3dx9_42.dll')
+    required = ('TESV.exe',)
     hashes = {name: {'sha1': inputs[name]['sha1']} for name in required}
     for record in hashes.values():
         if len(record['sha1']) != 40 or any(c not in '0123456789abcdef' for c in record['sha1']):
@@ -65,8 +65,8 @@ Overrides: ./Skydream --wayland or ./Skydream --x11.
 
 This archive contains statically recompiled game code. It does not contain
 original PE images, game assets, saves, or the complete playable game.
-Required images: TESV.exe (and unpacked variant if applicable), d3dx9_42.dll,
-Bink uses native FFmpeg and X3DAudio uses native F3DAudio; their PE images are not needed. See build-inputs.json for exact build hashes.
+Required image: TESV.exe (and unpacked variant if applicable).
+D3DX uses native image/math code and vkd3d-shader; Bink uses native FFmpeg and X3DAudio uses native F3DAudio; their PE images are not needed. See build-inputs.json for exact build hashes.
 Keep originals beside the binary, or *.pe images in lib/skyrim-native/guest.
 
 Optional SKSE compatibility is recorded in BUILD-INFO.json and --help.
@@ -83,6 +83,13 @@ code and third-party license boundaries. No rights in game code are granted
 by the project's GPL notice.
 ''',
     }
+    shader = ROOT / 'build/native-shader/lib/libvkd3d-shader.so.1'
+    files['lib/skyrim-native/libvkd3d-shader.so.1'] = elf64(shader)
+    for dep in ('stb','vkd3d'):
+        files[dep+'-LICENSE'] = (ROOT/'third_party'/dep/'LICENSE').read_bytes()
+    for name in ('vkd3d-2.0.tar.xz','spirv-headers.tar.gz','vulkan-headers.tar.gz'):
+        files['sources/'+name] = (ROOT/'build/native-shader-source'/name).read_bytes()
+    files['sources/build-native-shader.sh'] = (ROOT/'tools/build-native-shader.sh').read_bytes()
     needed = []
     for label, path in [('Skydream', args.binary), ('libdxvk_d3d9.so', args.dxvk)]:
         output = subprocess.check_output(['readelf', '-d', str(path)], text=True)

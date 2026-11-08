@@ -35,6 +35,7 @@ On Debian/Ubuntu:
 
 ```sh
 sudo apt install clang cmake ninja-build pkg-config python3-venv \
+    bison flex libjson-perl wine64-tools curl xz-utils \
     libsdl2-dev libvulkan-dev libavcodec-dev libavutil-dev libswresample-dev libavformat-dev libswscale-dev ffmpeg
 python3 -m venv .venv
 . .venv/bin/activate
@@ -51,7 +52,6 @@ Create a local `GAME` folder containing:
 GAME/
   TESV.exe
   TESV_unpacked.exe
-  d3dx9_42.dll
   Skyrim_Default.ini
   low.ini
   Data/
@@ -59,7 +59,7 @@ GAME/
     ...
 ```
 
-`TESV_unpacked.exe` must be the unpacked 32-bit TESV 1.9.32 executable corresponding to your installation. If your executable is already unpacked, a local copy named `TESV_unpacked.exe` is sufficient. This repository does not provide or obtain game files. The 32-bit D3DX9 DLL is a game/DirectX redistributable input, not a Wine builtin DLL. Bink and X3DAudio are implemented natively and their DLL images are no longer required.
+`TESV_unpacked.exe` must be the unpacked 32-bit TESV 1.9.32 executable corresponding to your installation. If your executable is already unpacked, a local copy named `TESV_unpacked.exe` is sufficient. This repository does not provide or obtain game files. D3DX9, Bink and X3DAudio are implemented natively; their DLL images are no longer required. See [Native D3DX](docs/NATIVE_D3DX.md) for scope and limitations.
 
 The local Linux build was exercised with TESV SHA-1 `67a597df3bb8c5db94b9032f8179d29631b1145d`. Runtime hooks target Skyrim 1.9.32; changing the executable version requires checking those hooks, not just regenerating C.
 
@@ -67,6 +67,7 @@ The local Linux build was exercised with TESV SHA-1 `67a597df3bb8c5db94b9032f817
 
 ```sh
 . .venv/bin/activate
+JOBS=16 sh tools/build-native-shader.sh
 DISCOVER_JOBS=6 sh tools/regen_gen.sh ./GAME
 JOBS=2 LB_GEN_JOBS=2 sh desktop/build.sh -DLB_BUILD_GAME=ON
 ./desktop/run.sh ./GAME

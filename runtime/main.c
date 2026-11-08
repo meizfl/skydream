@@ -355,7 +355,7 @@ static void check_game_dir(void) {
                  GAME_TITLE " install folder into it.", g_game_dir, why, strerror(e));
     }
 #ifdef GAME_SKYRIM
-    static const char *const k_need[] = {GAME_EXE, DLL_D3DX9, "Data", NULL};
+    static const char *const k_need[] = {GAME_EXE, "Data", NULL};
 #else
     static const char *const k_need[] = {GAME_EXE, DLL_D3DX9, DLL_EXTRA, NULL};
 #endif
@@ -548,6 +548,7 @@ int main(int argc, char **argv) {
     /* keep the null page inaccessible to catch null derefs */
     mprotect(MEM, 0x10000, PROT_NONE);
     rt_init_shims();
+    if (argc > 3 && !strcmp(argv[3], "--d3dx-test")) { extern int d3dx_shader_selftest(CPU *); CPU *test_cpu=rt_new_cpu(); rt_thread_init(test_cpu); return d3dx_shader_selftest(test_cpu); }
     { extern void rt_watchdog_start(void); rt_watchdog_start(); }
     /* dxvk writes its pipeline state cache to the working directory; keep the game folder clean */
     if (!getenv("DXVK_STATE_CACHE_PATH")) setenv("DXVK_STATE_CACHE_PATH", g_save_dir, 1);

@@ -17,3 +17,5 @@ The Elder Scrolls, Skyrim and Bethesda names and game assets belong to their res
 The optional `SKYDREAM_SKSE` feature is an independent, incomplete implementation of classic Papyrus extension interfaces. No original SKSE code, binaries or scripts are included or relicensed. The original SKSE package has separate distribution restrictions. See docs/SKSE_COMPATIBILITY.md.
 
 Native spatial audio uses a vendored F3DAudio subset from FAudio 26.10, commit 6839b88e304a046ae1a609ff14a085371e02a4e0, under its original zlib license. It is not relicensed as original Skydream code. See third_party/f3daudio/LICENSE and README.skydream for attribution and modifications.
+
+Native D3DX image decoding uses stb_image (MIT/public domain, original notices in third_party/stb). Native HLSL compilation uses the separately built ELF libvkd3d-shader 2.0 (LGPL-2.1-or-later). Public headers and license are in third_party/vkd3d; tools/build-native-shader.sh retrieves hash-pinned corresponding sources and build headers. WIDL is used only while building the compiler. No Wine runtime is required by this compiler.

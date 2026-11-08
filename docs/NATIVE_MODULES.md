@@ -114,3 +114,5 @@ the full system CLI's SIMD converter by at most 2 RGB quantization levels
 out of 255 on the selected frames; decoded audio matched byte for byte.
 The test enforces this bound, verifies dimensions and exact PCM, and checks
 that required decoders/demuxer are actually present in minimal FFmpeg builds.
+
+D3DX9 helper replacement is described in [NATIVE_D3DX.md](NATIVE_D3DX.md). Skyrim now needs only TESV.exe.pe as a guest memory image.

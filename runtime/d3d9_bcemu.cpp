@@ -97,6 +97,8 @@ void decode_rect(D3DFORMAT f, const BcLevel &lv, const RECT &r, uint8_t *host, I
 }
 } // namespace
 
+void native_d3dx_decode_block(D3DFORMAT f,const uint8_t *b,uint8_t *out,int pitch,int w,int h) { decode_block(f,b,out,pitch,w,h); }
+
 bool bc_emulating(IDirect3D9 *d3d) {
     if (!g_decided && d3d) {
         g_decided = true;

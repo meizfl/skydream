@@ -1,0 +1,12 @@
+vkd3d-shader 2.0 (Wine project), LGPL-2.1-or-later.
+Upstream: https://gitlab.winehq.org/wine/vkd3d
+Source: https://dl.winehq.org/vkd3d/source/vkd3d-2.0.tar.xz
+SHA256: 9ad29bb236808186a47ec66e853b21e6fca59b9dc62a9474b05d5e3eda2710ef
+
+This directory contains the unmodified public shader/types headers and COPYING.
+The native ELF compiler is built by tools/build-native-shader.sh from verified
+upstream sources. The script also pins the SPIRV-Headers build input. Original
+copyright notices are retained. No Wine process or Windows compiler DLL is used.
+Only libvkd3d-shader is built and bundled, not the vkd3d D3D12 runtime.
+The source archive, generated source and build configuration are kept in
+build/native-shader-source; use the script to obtain the corresponding source.
