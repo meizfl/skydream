@@ -3,6 +3,7 @@
  * player's log.txt shows where the time goes. save/noprof.txt turns it off. */
 #define _GNU_SOURCE
 #include "rt.h"
+#if defined(__linux__)
 #include <dlfcn.h>
 #include <signal.h>
 #include <stdio.h>
@@ -176,3 +177,14 @@ void cpu_report(void) {
     if (last_t != 0) LOG("cpu: %.0f%% of one core in total;%s", total, out);
     last_t = now;
 }
+
+#else
+void prof_start(void) { LOG("sampling profiler: Linux-only; runtime counters remain available"); }
+void prof_report(void) {
+#ifdef GAME_SKYRIM
+    extern void engine_primitives_report(void), engine_strings_report(void), physics_timing_report(void);
+    engine_primitives_report(); engine_strings_report(); physics_timing_report();
+#endif
+}
+void cpu_report(void) {}
+#endif

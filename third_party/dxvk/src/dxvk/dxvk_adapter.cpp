@@ -320,6 +320,8 @@ namespace dxvk {
     
     // Enable additional extensions if necessary
     extensionsEnabled.merge(m_extraExtensions);
+    if (m_deviceExtensions.supports("VK_KHR_portability_subset"))
+      extensionsEnabled.add("VK_KHR_portability_subset");
     DxvkNameList extensionNameList = extensionsEnabled.toNameList();
 
     // Enable additional device features if supported

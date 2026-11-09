@@ -181,7 +181,7 @@ namespace dxvk {
 
     void writerFunc();
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(DXVK_NATIVE)
     std::wstring getCacheFileName() const;
 #else
     std::string getCacheFileName() const;

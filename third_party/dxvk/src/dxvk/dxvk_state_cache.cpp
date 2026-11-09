@@ -988,7 +988,7 @@ namespace dxvk {
     }
   }
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(DXVK_NATIVE)
   std::wstring DxvkStateCache::getCacheFileName() const {
 #else
   std::string DxvkStateCache::getCacheFileName() const {
@@ -1001,7 +1001,7 @@ namespace dxvk {
     std::string exeName = env::getExeBaseName();
     path += exeName + ".dxvk-cache";
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(DXVK_NATIVE)
     return str::tows(path.c_str());
 #else
     return path;

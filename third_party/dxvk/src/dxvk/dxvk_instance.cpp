@@ -119,6 +119,8 @@ namespace dxvk {
     for (const auto& provider : m_extProviders)
       extensionsEnabled.merge(provider->getInstanceExtensions());
 
+    const bool portability = extensionsAvailable.supports("VK_KHR_portability_enumeration");
+    if (portability) extensionsEnabled.add("VK_KHR_portability_enumeration");
     DxvkNameList extensionNameList = extensionsEnabled.toNameList();
     
     Logger::info("Enabled instance extensions:");
@@ -138,7 +140,7 @@ namespace dxvk {
     VkInstanceCreateInfo info;
     info.sType                    = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     info.pNext                    = nullptr;
-    info.flags                    = 0;
+    info.flags                    = portability ? 0x00000001u : 0; // ENUMERATE_PORTABILITY_BIT_KHR
     info.pApplicationInfo         = &appInfo;
     info.enabledLayerCount        = 0;
     info.ppEnabledLayerNames      = nullptr;

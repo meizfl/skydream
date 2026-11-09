@@ -3,7 +3,7 @@
 #include "../util/rc/util_rc.h"
 #include "../util/rc/util_rc_ptr.h"
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(DXVK_NATIVE)
 #define VK_USE_PLATFORM_WIN32_KHR 1
 #endif
 #include <vulkan/vulkan.h>

@@ -137,7 +137,7 @@ namespace dxvk {
 
 
   void FpsLimiter::initialize() {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(DXVK_NATIVE)
     HMODULE ntdll = ::GetModuleHandleW(L"ntdll.dll");
 
     if (ntdll) {

@@ -31,3 +31,10 @@ __pycache__/
 *.whl
 
 /dist/
+
+# Additional native desktop build products
+*.dylib
+*.obj
+*.pdb
+*.dll.a
+/CMakeUserPresets.json

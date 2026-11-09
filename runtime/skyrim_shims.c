@@ -6,7 +6,7 @@
 #include <string.h>
 #include <strings.h>
 #include <sys/stat.h>
-#include <sys/statvfs.h>
+
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
@@ -297,9 +297,9 @@ SHIM(GetFileTime) {
 }
 SHIM(GetDriveTypeA) { RET(3, 1); }  /* DRIVE_FIXED */
 SHIM(GetDiskFreeSpaceExA) {
-    struct statvfs sv;
+
     uint64_t free_b = 8ull << 30, total = 32ull << 30;
-    if (!statvfs(g_save_dir, &sv)) { free_b = (uint64_t)sv.f_bavail * sv.f_frsize; total = (uint64_t)sv.f_blocks * sv.f_frsize; }
+    rt_host_disk_space(g_save_dir, &free_b, &total);
     for (int i = 1; i <= 3; i++) {
         uint64_t v = i == 2 ? total : free_b;
         if (ARG(i)) { M32(ARG(i)) = (uint32_t)v; M32(ARG(i) + 4) = (uint32_t)(v >> 32); }

@@ -684,7 +684,7 @@ namespace dxvk {
       filePath = "dxvk.conf";
     
     // Open the file if it exists
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(DXVK_NATIVE)
     std::ifstream stream(str::tows(filePath.c_str()).c_str());
 #else
     std::ifstream stream(filePath.c_str());

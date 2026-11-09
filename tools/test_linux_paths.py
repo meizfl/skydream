@@ -10,7 +10,7 @@ class LinuxPathsTest(unittest.TestCase):
     def test_direct_launch_and_explicit_paths(self):
         root = pathlib.Path(__file__).resolve().parents[1]
         source = (root / 'runtime/main.c').read_text()
-        start = source.index('static void linux_paths(')
+        start = source.index('static void desktop_paths(')
         function = source[start:source.index('\n}\n#endif', start) + 2]
         code = '''#define _GNU_SOURCE
 #include <stdio.h>
@@ -21,6 +21,8 @@ class LinuxPathsTest(unittest.TestCase):
 #include <sys/stat.h>
 #include <errno.h>
 #include <assert.h>
+#include <SDL2/SDL.h>
+#include "host.h"
 char g_game_dir[1024], g_save_dir[1024];
 void rt_fatal(const char *fmt, ...) {
     va_list args; va_start(args, fmt); vfprintf(stderr, fmt, args); va_end(args); exit(1);
@@ -29,7 +31,7 @@ void rt_fatal(const char *fmt, ...) {
 int main(int argc, char **argv) {
     int wayland = argc > 1 && !strcmp(argv[1], "--wayland");
     int x11 = argc > 1 && !strcmp(argv[1], "--x11");
-    linux_paths(argc, argv);
+    desktop_paths(argc, argv);
     if (wayland) assert(!strcmp(getenv("SDL_VIDEODRIVER"), "wayland"));
     if (x11) assert(!strcmp(getenv("SDL_VIDEODRIVER"), "x11"));
     printf("%s\\n%s\\n", g_game_dir, g_save_dir);
@@ -42,7 +44,7 @@ int main(int argc, char **argv) {
             exe = game / 'Skyrim'
             c = base / 'paths.c'
             c.write_text(code)
-            subprocess.run(['cc', str(c), '-o', str(exe)], check=True)
+            subprocess.run(['cc', '-I', str(root/'runtime'), str(c), str(root/'runtime/host.c'), '-I/usr/include/SDL2', '-lSDL2', '-o', str(exe)], check=True)
             env = dict(os.environ, XDG_DATA_HOME=str(base / 'data'))
             result = subprocess.run([str(exe)], cwd='/', env=env, text=True, capture_output=True, check=True)
             self.assertEqual(result.stdout.splitlines(), [str(game), str(base / 'data/skyrim-native/save')])

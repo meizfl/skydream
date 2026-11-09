@@ -2356,7 +2356,7 @@ namespace dxvk {
     const std::string dumpPath = env::getEnvVar("DXVK_SHADER_DUMP_PATH");
 
     if (dumpPath.size() != 0) {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(DXVK_NATIVE)
       std::ofstream dumpStream(
         str::tows(str::format(dumpPath, "/", Name, ".spv").c_str()).c_str(),
         std::ios_base::binary | std::ios_base::trunc);

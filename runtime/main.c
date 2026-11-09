@@ -5,7 +5,7 @@
 #include "rt.h"
 #include "rt_table.h"
 #include <stdarg.h>
-#include <sys/mman.h>
+
 #include <unistd.h>
 #include <string.h>
 #include <strings.h>
@@ -14,9 +14,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <sys/stat.h>
-#ifdef __ANDROID__
 #include <SDL2/SDL.h>
-#endif
 
 uint8_t *MEM;
 int g_log_level = 1;
@@ -265,7 +263,7 @@ static _Unwind_Reason_Code bt_step(struct _Unwind_Context *ctx, void *arg) {
 }
 static void on_crash(int sig, siginfo_t *si, void *ucv) {
     ucontext_t *uc = ucv;
-    fprintf(stderr, "CRASH: signal %d code %d at address %p (thread %d)\n", sig, si->si_code, si->si_addr, gettid());
+    fprintf(stderr, "CRASH: signal %d code %d at address %p (thread %d)\n", sig, si->si_code, si->si_addr, rt_host_thread_id());
 #if defined(__aarch64__)
     uintptr_t pc = uc->uc_mcontext.pc, lr = uc->uc_mcontext.regs[30];
     fprintf(stderr, "  sp %llx\n", (unsigned long long)uc->uc_mcontext.sp);
@@ -423,7 +421,7 @@ static void check_game_dir(void) {
 
 #ifndef __ANDROID__
 /* Resolve paths before check_game_dir changes the working directory. */
-static void linux_paths(int argc, char **argv) {
+static void desktop_paths(int argc, char **argv) {
     const char *program = argv[0];
     while (argc > 1 && (!strcmp(argv[1], "--wayland") || !strcmp(argv[1], "--x11"))) {
         const char *driver = !strcmp(argv[1], "--wayland") ? "wayland" : "x11";
@@ -453,13 +451,8 @@ static void linux_paths(int argc, char **argv) {
     char executable[4096];
     const char *requested = argc > 1 ? argv[1] : executable;
     if (argc < 2) {
-        ssize_t n = readlink("/proc/self/exe", executable, sizeof executable - 1);
-        if (n < 0 || n >= (ssize_t)sizeof executable - 1)
-            rt_fatal("cannot locate executable: %s", strerror(errno));
-        executable[n] = 0;
-        char *slash = strrchr(executable, '/');
-        if (!slash) rt_fatal("cannot locate executable directory");
-        *slash = 0;
+        if (rt_host_base_path(executable, sizeof executable))
+            rt_fatal("cannot locate executable directory");
     }
     char *game = realpath(requested, NULL);
     if (!game) rt_fatal("cannot open game folder %s: %s", requested, strerror(errno));
@@ -474,7 +467,7 @@ static void linux_paths(int argc, char **argv) {
     char path[sizeof g_save_dir];
     int n;
     if (argc > 2) {
-        if (argv[2][0] == '/') n = snprintf(path, sizeof path, "%s", argv[2]);
+        if (argv[2][0] == '/' || (argv[2][0] && argv[2][1] == ':')) n = snprintf(path, sizeof path, "%s", argv[2]);
         else {
             char cwd[1024];
             if (!getcwd(cwd, sizeof cwd)) rt_fatal("getcwd: %s", strerror(errno));
@@ -487,13 +480,23 @@ static void linux_paths(int argc, char **argv) {
         const char *data = getenv("XDG_DATA_HOME"), *home = getenv("HOME");
         if (!stat(portable,&profile_stat) && S_ISDIR(profile_stat.st_mode))
             n = snprintf(path,sizeof path,"%s",portable);
+#if defined(_WIN32) || defined(__APPLE__)
+        else {
+            char *pref = SDL_GetPrefPath("meizfl", "Skydream");
+            if (!pref) rt_fatal("cannot locate profile directory: %s", SDL_GetError());
+            n = snprintf(path, sizeof path, "%s", pref); SDL_free(pref);
+            for (char *p=path;*p;p++) if (*p=='\\') *p='/';
+        }
+#else
         else if (data && data[0] == '/') n = snprintf(path, sizeof path, "%s/skyrim-native/save", data);
         else if (home && home[0] == '/') n = snprintf(path, sizeof path, "%s/.local/share/skyrim-native/save", home);
         else { rt_fatal("set HOME or XDG_DATA_HOME, or provide an absolute SAVE_DIR"); return; }
+#endif
     }
     if (n < 0 || n >= (int)sizeof path) rt_fatal("save path is too long");
     for (char *q = path + 1; ; q++) {
         if (*q != '/' && *q != '\0') continue;
+        if (*q == '/' && q == path + 2 && path[1] == ':') continue;
         char saved = *q;
         *q = '\0';
         if (mkdir(path, 0700) && errno != EEXIST)
@@ -548,15 +551,15 @@ int main(int argc, char **argv) {
     }
 #endif
 #ifndef __ANDROID__
-    linux_paths(argc, argv);
+    desktop_paths(argc, argv);
 #else
     if (argc > 1) snprintf(g_game_dir, sizeof g_game_dir, "%s", argv[1]);
     if (argc > 2) snprintf(g_save_dir, sizeof g_save_dir, "%s", argv[2]);
 #endif
-    MEM = mmap(NULL, 1ull << 32, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
-    if (MEM == MAP_FAILED) rt_fatal("cannot reserve guest address space");
+    MEM = rt_host_reserve_guest(1ull << 32);
+    if (!MEM) rt_fatal("cannot reserve guest address space");
     /* keep the null page inaccessible to catch null derefs */
-    mprotect(MEM, 0x10000, PROT_NONE);
+    /* host backend preserves the inaccessible null page */
     rt_init_shims();
     if (argc > 3 && !strcmp(argv[3], "--d3dx-test")) { extern int d3dx_shader_selftest(CPU *); CPU *test_cpu=rt_new_cpu(); rt_thread_init(test_cpu); return d3dx_shader_selftest(test_cpu); }
     { extern void rt_watchdog_start(void); rt_watchdog_start(); }

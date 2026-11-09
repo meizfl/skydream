@@ -637,7 +637,7 @@ namespace dxvk {
           return D3DERR_INVALIDCALL;
       }
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(DXVK_NATIVE)
       D3D9WindowMessageFilter filter(m_window);
 #endif
 

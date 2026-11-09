@@ -4,7 +4,7 @@
 #include <condition_variable>
 #include <functional>
 #include <mutex>
-#ifndef _WIN32
+#if !defined(_WIN32) || defined(DXVK_NATIVE)
 #include <thread>
 #endif
 
@@ -17,7 +17,7 @@
 
 namespace dxvk {
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(DXVK_NATIVE)
   /**
    * \brief Thread priority
    */

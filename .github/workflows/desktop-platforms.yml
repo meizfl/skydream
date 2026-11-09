@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: GPL-3.0-only
+name: Desktop platform builds
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            arch: x86_64
+          - runner: macos-15
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencies
+        run: brew install cmake ninja pkg-config sdl2 vulkan-headers ffmpeg
+      - name: Build complete host runtime and DXVK
+        run: |
+          cmake --preset host-check -DCMAKE_PREFIX_PATH="$(brew --prefix)" -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
+          cmake --build --preset host-check --parallel 3
+          ctest --test-dir build/host-check/desktop --output-on-failure
+          test "$(lipo -archs build/host-check/desktop/dxvk/libdxvk_d3d9.dylib)" = "${{ matrix.arch }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: skydream-host-macos-${{ matrix.arch }}-${{ github.sha }}
+          path: build/host-check/desktop/dxvk/*.dylib
+          if-no-files-found: error
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-SDL2
+            mingw-w64-ucrt-x86_64-vulkan-headers
+            mingw-w64-ucrt-x86_64-ffmpeg
+      - name: Build complete host runtime and DXVK
+        run: |
+          cmake --preset host-check
+          cmake --build --preset host-check --parallel 3
+          ctest --test-dir build/host-check/desktop --output-on-failure
+      - uses: actions/upload-artifact@v4
+        with:
+          name: skydream-host-windows-${{ github.sha }}
+          path: build/host-check/desktop/dxvk/*.dll
+          if-no-files-found: error

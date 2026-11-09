@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include "host_compat.h"
 
 /* ---- guest memory layout ---- */
 #define GUEST_IMAGE_BASE   0x00400000u

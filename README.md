@@ -1,6 +1,6 @@
-# Skydream — Skyrim for Linux
+# Skydream — Skyrim desktop runtime
 
-Experimental native Linux port of **The Elder Scrolls V: Skyrim (2011 / Legendary Edition, 1.9.32)**, separated from [ttom795's Skyrim_Android](https://github.com/ttom795/Skyrim_Android) 0.30.6.
+Experimental native desktop port of **The Elder Scrolls V: Skyrim (2011 / Legendary Edition, 1.9.32)**, separated from [ttom795's Skyrim_Android](https://github.com/ttom795/Skyrim_Android) 0.30.6.
 
 This is static recompilation, not a reconstruction of Bethesda's original source code. The runtime translates Windows API calls itself and renders through patched DXVK to Vulkan. Wine, Proton and Android tooling are not required.
 
@@ -8,7 +8,7 @@ This source repository contains no game executable, DLL, assets, saves, lifted g
 
 ## Features
 
-- Native Linux x86-64 executable, SDL2 window/input/audio and Vulkan graphics.
+- Shared 64-bit desktop build for Linux, MinGW Windows and macOS; SDL2 window/input/audio and Vulkan graphics. Linux gameplay remains the tested baseline.
 - Automatic native Wayland or X11 selection; explicit backend overrides.
 - F11 fullscreen toggle. Render resources are allocated at monitor resolution on startup to avoid corrupting Skyrim's image-space targets during live resolution changes.
 - Relative mouse camera control during gameplay; a free system cursor in menus and on focus loss.
@@ -18,6 +18,8 @@ This source repository contains no game executable, DLL, assets, saves, lifted g
 - Native X3DAudio spatial math using the zlib-licensed F3DAudio module; no X3DAudio PE image. See [replacement scope and validation](docs/NATIVE_MODULES.md).
 - Parallel function discovery through `DISCOVER_JOBS`.
 - A relocatable game-folder packer with direct executable launch.
+
+See [desktop build instructions and platform validation](docs/BUILDING_DESKTOP.md) for Windows, macOS Intel and macOS arm64 builds.
 
 This remains experimental. Broad gameplay, mod compatibility, other executable versions and other Linux distributions have not been validated. Native dependencies are resolved from the host system; a packaged game folder is not a universal AppImage.
 
@@ -60,7 +62,7 @@ python3 -m venv .venv
 python3 -m pip install -r requirements.txt
 ```
 
-Use Python 3.10 or newer, a C++17 compiler, 64-bit Linux and a Vulkan 1.1-capable driver. `ffmpeg` is used by the audio regression test. Builds of lifted game code can need 1–2 GB of RAM per concurrent compiler process; the default generated-code build concurrency is two.
+For the validated Linux path, use Python 3.10 or newer, a C++17 compiler, 64-bit Linux and a Vulkan 1.1-capable driver. `ffmpeg` is used by the audio regression test. Builds of lifted game code can need 1–2 GB of RAM per concurrent compiler process; the default generated-code build concurrency is two.
 
 ## Supply game inputs
 
@@ -161,7 +163,7 @@ This separate archive contains the native `Skydream` executable, DXVK, build/inp
 - `third_party/dxvk/`: modified vendored DXVK-native sources and shader headers.
 - `docs/UPSTREAM_README.md`: preserved documentation from the supplied Android snapshot.
 
-The Android launcher, bundled SDL2 tree, generated game code, local inputs and build products have deliberately been left out. Shared runtime sources retain Android conditional branches for provenance; this repository builds only the Linux target.
+The Android launcher, bundled SDL2 tree, generated game code, local inputs and build products have deliberately been left out. Shared runtime sources retain Android conditional branches for provenance; the shared CMake entry now supports Linux, MinGW Windows and macOS. Windows/macOS runtime checks and their remaining validation limits are documented separately.
 
 ## License
 

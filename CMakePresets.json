@@ -1,0 +1,21 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {"major": 3, "minor": 21, "patch": 0},
+  "configurePresets": [
+    {
+      "name": "desktop", "displayName": "Native desktop (Linux, MinGW Windows, macOS)",
+      "generator": "Ninja", "binaryDir": "${sourceDir}/build/native",
+      "cacheVariables": {"CMAKE_BUILD_TYPE": "Release", "LB_GEN_JOBS": "2"}
+    },
+    {
+      "name": "host-check", "inherits": "desktop",
+      "displayName": "Host runtime and renderer, without private game code",
+      "binaryDir": "${sourceDir}/build/host-check",
+      "cacheVariables": {"LB_BUILD_GAME": "OFF", "SKYDREAM_SKSE": "ON", "SKYDREAM_SKYUI": "ON"}
+    }
+  ],
+  "buildPresets": [
+    {"name": "desktop", "configurePreset": "desktop"},
+    {"name": "host-check", "configurePreset": "host-check"}
+  ]
+}

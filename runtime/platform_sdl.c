@@ -78,7 +78,9 @@ static void select_video_driver(void) {
 
 void platform_init(void) {
 #ifndef __ANDROID__
+#ifdef __linux__
     select_video_driver();
+#endif
 #endif
     SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS) != 0)
@@ -290,7 +292,7 @@ const Uint8 *platform_keys(int *n) {
 /* Interactive test input: LB_KEYFIFO=path, lines "Key[:frames]" are queued
  * at the current frame (desktop testing only). */
 static void poll_key_fifo(void) {
-#ifndef __ANDROID__
+#if !defined(__ANDROID__) && !defined(_WIN32)
     static FILE *fifo;
     static int tried;
     if (!tried) {

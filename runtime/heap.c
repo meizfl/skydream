@@ -8,7 +8,7 @@
  */
 #include "rt.h"
 #include <string.h>
-#include <sys/mman.h>
+
 
 #define HDR 8u
 #define MINBLK 32u
@@ -196,7 +196,7 @@ void gvfree(uint32_t addr) {
     pthread_mutex_lock(&g_va_lock);
     for (int i = 0; i < g_nregions; i++)
         if (g_regions[i].base == addr) {
-            madvise(MEM + addr, g_regions[i].size, MADV_DONTNEED);
+            rt_host_discard(MEM + addr, g_regions[i].size);
             g_regions[i] = g_regions[--g_nregions];
             break;
         }

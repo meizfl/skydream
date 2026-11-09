@@ -2,17 +2,16 @@
 
  #include <array>
 #include <filesystem>
-#include <unistd.h>
+#include <SDL.h>
 #include <limits.h>
 
 namespace dxvk::env {
 
   std::string getExePath() {
-    std::array<char, PATH_MAX> exePath = {};
-
-    size_t count = readlink("/proc/self/exe", exePath.data(), exePath.size());
-
-    return std::string(exePath.begin(), exePath.begin() + count);
+    char* base = SDL_GetBasePath();
+    std::string result = base ? base : "";
+    SDL_free(base);
+    return result + "Skydream";
   }
   
   

@@ -5,7 +5,7 @@
 #include "../third_party/vkd3d/include/vkd3d_shader.h"
 #include "d3d9_bridge.h"
 #include <algorithm>
-#include <dlfcn.h>
+#include <SDL2/SDL.h>
 #include <mutex>
 #include <string>
 #include <unordered_map>
@@ -16,17 +16,23 @@ static PFN_vkd3d_shader_free_messages free_messages;
 static std::once_flag compiler_once;
 static void init_compiler() {
   const char *path = getenv("SKYDREAM_VKD3D_SHADER");
-  void *lib =
-      dlopen(path ? path : "libvkd3d-shader.so.1", RTLD_NOW | RTLD_LOCAL);
+#if defined(_WIN32)
+  const char *default_name = "libvkd3d-shader-1.dll";
+#elif defined(__APPLE__)
+  const char *default_name = "libvkd3d-shader.1.dylib";
+#else
+  const char *default_name = "libvkd3d-shader.so.1";
+#endif
+  void *lib = SDL_LoadObject(path ? path : default_name);
   if (!lib) {
-    LOG("D3DX: native HLSL compiler unavailable: %s", dlerror());
+    LOG("D3DX: native HLSL compiler unavailable: %s", SDL_GetError());
     return;
   }
-  compile_hlsl = (PFN_vkd3d_shader_compile)dlsym(lib, "vkd3d_shader_compile");
-  free_code = (PFN_vkd3d_shader_free_shader_code)dlsym(
+  compile_hlsl = (PFN_vkd3d_shader_compile)SDL_LoadFunction(lib, "vkd3d_shader_compile");
+  free_code = (PFN_vkd3d_shader_free_shader_code)SDL_LoadFunction(
       lib, "vkd3d_shader_free_shader_code");
   free_messages =
-      (PFN_vkd3d_shader_free_messages)dlsym(lib, "vkd3d_shader_free_messages");
+      (PFN_vkd3d_shader_free_messages)SDL_LoadFunction(lib, "vkd3d_shader_free_messages");
   if (!compile_hlsl || !free_code || !free_messages) {
     compile_hlsl = nullptr;
     LOG("D3DX: incompatible vkd3d-shader library");

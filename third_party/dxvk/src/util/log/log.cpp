@@ -10,7 +10,7 @@ namespace dxvk {
       auto path = getFileName(file_name);
 
       if (!path.empty()) {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(DXVK_NATIVE)
         m_fileStream = std::ofstream(str::tows(path.c_str()).c_str());
 #else
         m_fileStream = std::ofstream(path.c_str());

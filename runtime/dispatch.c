@@ -73,7 +73,7 @@ static void wd_note(CPU *c, const char *name) {
     if (t_wd < 0) {
         t_wd = __atomic_fetch_add(&g_wd_n, 1, __ATOMIC_RELAXED);
         if (t_wd >= WD_MAX) t_wd = WD_MAX - 1;
-        g_wd[t_wd].tid = (uint32_t)gettid();
+        g_wd[t_wd].tid = (uint32_t)rt_host_thread_id();
         g_wd[t_wd].th = pthread_self();
     }
     g_wd[t_wd].name = name;
@@ -97,7 +97,7 @@ static const char *rtti_name(uint32_t obj) {
     return (const char *)(MEM + td + 8);
 }
 
-#ifndef __ANDROID__
+#if defined(__linux__) && !defined(__ANDROID__)
 #include <execinfo.h>
 #include <signal.h>
 /* desktop: SIGUSR2 makes a thread print its host backtrace (guest call chain) */
@@ -106,7 +106,7 @@ static void wd_bt(int sig) {
     void *bt[48];
     int n = backtrace(bt, 48);
     char hdr[64];
-    int l = snprintf(hdr, sizeof hdr, "--- backtrace tid %d\n", (int)gettid());
+    int l = snprintf(hdr, sizeof hdr, "--- backtrace tid %d\n", (int)rt_host_thread_id());
     write(2, hdr, l);
     backtrace_symbols_fd(bt, n, 2);
 }
@@ -144,7 +144,7 @@ static void *wd_thread(void *arg) {
 #endif
             }
         }
-#ifndef __ANDROID__
+#if defined(__linux__) && !defined(__ANDROID__)
         if (tick == 26) {
             LOG("io guard 0x1B97ED8 = %d", M8(0x1B97ED8));
             signal(SIGUSR2, wd_bt);

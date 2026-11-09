@@ -6,7 +6,10 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <fnmatch.h>
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 #include <sched.h>
 #include <string.h>
 #include <strings.h>
@@ -23,6 +26,14 @@
 #define ERROR_ALREADY_EXISTS 183
 #define INVALID_HANDLE 0xFFFFFFFFu
 #define WAIT_TIMEOUT 0x102u
+
+#if defined(__APPLE__)
+#define HOST_STAT_NSEC(s) ((s).st_mtimespec.tv_nsec)
+#elif defined(_WIN32)
+#define HOST_STAT_NSEC(s) 0
+#else
+#define HOST_STAT_NSEC(s) ((s).st_mtim.tv_nsec)
+#endif
 
 /* ===================== handles ===================== */
 struct HObj { int type; void *obj; };
@@ -230,7 +241,9 @@ static __thread uint32_t t_preset_tid;  /* id CreateThread already handed out */
  * guest thread to the fastest core instead, as 0.8-0.16 did. */
 static int g_guest_cpu = -2;     /* singlecore: the core; -1 otherwise */
 static int g_fast_set;           /* 1: guest threads restricted to g_fast */
+#ifdef __ANDROID__
 static cpu_set_t g_fast;
+#endif
 
 static void pin_guest_thread(void) {
 #ifdef __ANDROID__
@@ -444,7 +457,7 @@ SHIM(SetProcessAffinityMask) { RET(1, 2); }
  * Report the cores, capped at 4 (the phone's big cores, and what a 2011 PC
  * had), since the game's threads now really run in parallel. */
 static uint32_t guest_cpus(void) {
-    long n = sysconf(_SC_NPROCESSORS_CONF);
+    long n = rt_host_cpu_count();
     return n < 1 ? 1 : n > 4 ? 4 : (uint32_t)n;
 }
 SHIM(GetProcessAffinityMask) {
@@ -640,7 +653,7 @@ static int bsa_open(const char *host, int *first) {
     pthread_mutex_lock(&g_bsa_lock);
     for (int i = 0; i < g_nbsa; i++)
         if (!strcmp(g_bsa_fd[i].path, host)) { int fd = g_bsa_fd[i].fd; pthread_mutex_unlock(&g_bsa_lock); return fd; }
-    int fd = open(host, O_RDONLY);
+    int fd = open(host, O_RDONLY | O_BINARY);
     if (fd >= 0 && g_nbsa < 32) {
         snprintf(g_bsa_fd[g_nbsa].path, sizeof g_bsa_fd[g_nbsa].path, "%s", host);
         g_bsa_fd[g_nbsa++].fd = fd;
@@ -678,7 +691,7 @@ static int dir_lookup_ci(const char *dir, char *comp, size_t compsz) {
     DirCache *dc = NULL;
     for (int i = 0; i < 16; i++)
         if (g_dircache[i].names && !strcmp(g_dircache[i].dir, dir) &&
-            g_dircache[i].mtime == st.st_mtim.tv_sec && g_dircache[i].mtime_ns == st.st_mtim.tv_nsec)
+            g_dircache[i].mtime == st.st_mtime && g_dircache[i].mtime_ns == HOST_STAT_NSEC(st))
             dc = &g_dircache[i];
     if (!dc) {
         DIR *d = opendir(dir);
@@ -697,7 +710,7 @@ static int dir_lookup_ci(const char *dir, char *comp, size_t compsz) {
         closedir(d);
         if (!dc->names) dc->names = calloc(1, 1);
         snprintf(dc->dir, sizeof dc->dir, "%s", dir);
-        dc->mtime = st.st_mtim.tv_sec; dc->mtime_ns = st.st_mtim.tv_nsec;
+        dc->mtime = st.st_mtime; dc->mtime_ns = HOST_STAT_NSEC(st);
     }
     int hit = 0;
     for (size_t o = 0; o < dc->len; o += strlen(dc->names + o) + 1)
@@ -808,7 +821,7 @@ SHIM(CreateFileA) {
     if (fl & O_CREAT) mkdirs_for(host);
     const char *ext = strrchr(host, '.');
     int bsa = fl == O_RDONLY && ext && !strcasecmp(ext, ".bsa"), bsa_first = 0;
-    int fd = bsa ? bsa_open(host, &bsa_first) : open(host, fl, 0644);
+    int fd = bsa ? bsa_open(host, &bsa_first) : open(host, fl | O_BINARY, 0644);
     if (bsa && bsa_first < 0) bsa = 0;
     TRACE("CreateFileA %s -> %s fd=%d", name, host, fd);
     if (fd >= 0 && (fl & O_ACCMODE) == O_RDONLY && strstr(host, "/CachedShaders/")) {
@@ -1055,7 +1068,7 @@ SHIM(CreateDirectoryA) {
 static int find_next(GFind *g, uint32_t out) {
     struct dirent *de;
     while ((de = readdir(g->d))) {
-        if (fnmatch(g->pat, de->d_name, FNM_CASEFOLD)) continue;
+        if (!rt_host_match(g->pat, de->d_name)) continue;
         char full[1400];
         struct stat st;
         snprintf(full, sizeof full, "%s/%s", g->dir, de->d_name);

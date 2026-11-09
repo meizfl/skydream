@@ -123,10 +123,15 @@ add_library(dxvk_d3d9 SHARED
     src/wsi/sdl2/wsi_native_surface.cpp)
 target_include_directories(dxvk_d3d9 PRIVATE
     generated include include/native include/native/windows include/native/directx
-    src/util src/dxvk src/d3d9 src/dxso src/wsi src/spirv src/vulkan)
+    src/util src/dxvk src/d3d9 src/dxso src/wsi src/spirv src/vulkan ../sdlinc)
 target_include_directories(dxvk_d3d9 PUBLIC include/native/directx include/native/windows include/native)
 target_compile_definitions(dxvk_d3d9 PRIVATE NOMINMAX _WIN32_WINNT=0xa00 DXVK_NATIVE
-    DXVK_WSI_SDL2 DXVK_PLATFORM_LINUX _FILE_OFFSET_BITS=64)
+    DXVK_WSI_SDL2 _FILE_OFFSET_BITS=64)
 target_compile_options(dxvk_d3d9 PRIVATE -O2 "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-include cstdint>" "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-include cstring>"
     -Wno-deprecated-declarations -Wno-everything -fvisibility=default)
-target_link_libraries(dxvk_d3d9 PRIVATE SDL2 vulkan $<$<BOOL:${ANDROID}>:log>)
+if(ANDROID)
+    target_link_libraries(dxvk_d3d9 PRIVATE SDL2 vulkan log)
+else()
+    target_link_libraries(dxvk_d3d9 PRIVATE SDL2 Vulkan::Headers Threads::Threads)
+    set_target_properties(dxvk_d3d9 PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()

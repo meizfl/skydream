@@ -120,7 +120,7 @@ static void probe_native(CPU *c, uint32_t object, const SkseNative *fn) {
     gfree(memory);
 }
 
-static void register_natives(CPU *c, uint32_t registry) {
+void skse_register_natives(CPU *c, uint32_t registry) {
     unsigned count=0;
     const SkseNative *table=skse_native_table(&count);
     if(skse_skyui_enabled()) LOG("SKSE: experimental SkyUI interface enabled; full SKSE compatibility NOT certified");
@@ -158,14 +158,6 @@ static void register_natives(CPU *c, uint32_t registry) {
     if(getenv("LB_SKSE_SELFTEST") && !strcmp(getenv("LB_SKSE_SELFTEST"),"1"))
         LOG("SKSE compatibility: primitive guest ABI probes passed (system calls need gameplay tests)");
 }
-/* Linker wrapping intercepts direct calls and the function table without
- * modifying regenerated code. Disabled builds have no wrapper at all. */
-extern void __real_f_8F9720(CPU *c);
-void __wrap_f_8F9720(CPU *c) {
-    uint32_t registry_ptr=ARG(0);
-    __real_f_8F9720(c);
-    if(!registry_ptr || !M32(registry_ptr)) rt_fatal("SKSE compatibility: missing Papyrus registry");
-    register_natives(c,M32(registry_ptr));
-}
+
 #endif
 #endif

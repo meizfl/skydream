@@ -1,8 +1,12 @@
 #include "vulkan_loader.h"
+#include <SDL_vulkan.h>
 
 namespace dxvk::vk {
 
-  static const PFN_vkGetInstanceProcAddr GetInstanceProcAddr = vkGetInstanceProcAddr;
+  static PFN_vkVoidFunction GetInstanceProcAddr(VkInstance instance, const char* name) {
+    auto get = reinterpret_cast<PFN_vkGetInstanceProcAddr>(SDL_Vulkan_GetVkGetInstanceProcAddr());
+    return get ? get(instance, name) : nullptr;
+  }
 
   PFN_vkVoidFunction LibraryLoader::sym(const char* name) const {
     return dxvk::vk::GetInstanceProcAddr(nullptr, name);
