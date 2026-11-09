@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: GPL-3.0-only
+name: Private full game build checks
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  full-game:
+    # Never expose private inputs to pull requests or arbitrary branches.
+    if: github.ref == 'refs/heads/main'
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            arch: x86_64
+          - runner: macos-15
+            arch: arm64
+          - runner: windows-latest
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify and fetch private generated inputs
+        env:
+          SKYDREAM_GAME_INPUT_URL: ${{ secrets.SKYDREAM_GAME_INPUT_URL }}
+          SKYDREAM_GAME_INPUT_SHA256: ${{ secrets.SKYDREAM_GAME_INPUT_SHA256 }}
+        run: python tools/ci_game_input.py fetch
+      - name: macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja pkg-config sdl2 vulkan-headers ffmpeg
+      - uses: msys2/setup-msys2@v2
+        if: runner.os == 'Windows'
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-python
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-SDL2
+            mingw-w64-ucrt-x86_64-vulkan-headers
+            mingw-w64-ucrt-x86_64-ffmpeg
+      - name: macOS full build and embedded execution
+        if: runner.os == 'macOS'
+        run: |
+          cmake --preset desktop -DCMAKE_PREFIX_PATH="$(brew --prefix)" -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON -DLB_GEN_JOBS=2
+          cmake --build --preset desktop --parallel 3
+          test "$(lipo -archs build/lb)" = "${{ matrix.arch }}"
+          ctest --test-dir build/native/desktop --output-on-failure
+      - name: Windows full build and embedded execution
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          cmake --preset desktop -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON -DLB_GEN_JOBS=2
+          cmake --build --preset desktop --parallel 3
+          ctest --test-dir build/native/desktop --output-on-failure
+      # No upload-artifact/cache: binaries and generated sources contain private inputs.
+      - name: Remove private input and build products
+        if: always()
+        shell: bash
+        run: rm -rf gen build

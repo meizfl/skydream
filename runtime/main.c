@@ -518,6 +518,13 @@ static void desktop_paths(int argc, char **argv) {
 
 int main(int argc, char **argv) {
     install_crash_handler();
+#if defined(SKYDREAM_EMBEDDED_IMAGE) && !defined(__ANDROID__)
+    /* No SDL video, game directory, writable profile or GPU is needed. */
+    if (argc == 2 && !strcmp(argv[1], "--embedded-smoke")) {
+        extern int skydream_embedded_smoke(void);
+        return skydream_embedded_smoke();
+    }
+#endif
     const char *env = getenv("LB_LOG");
     if (env) g_log_level = atoi(env);
 #ifdef __ANDROID__
