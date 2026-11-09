@@ -9,9 +9,15 @@ build still requires generated code and initialization data from Skyrim 1.9.32.
 | Target | Compiler | Validation |
 |---|---|---|
 | Linux x86-64 | GCC or Clang | Local full game build, regression tests and host-platform CTest |
-| Windows x86-64 | MinGW-w64 GCC (MSYS2 UCRT64 recommended) | Local cross-build; native CI build and platform test configured |
-| macOS Intel | Apple Clang | Separate `macos-15-intel` CI job, SDK/build not available locally |
-| macOS Apple Silicon | Apple Clang | Separate `macos-15` arm64 CI job, SDK/build not available locally |
+| Windows x86-64 | MinGW-w64 GCC (MSYS2 UCRT64 recommended) | Full executable built and embedded/platform tests passed on native Windows CI |
+| macOS Intel | Apple Clang | Full x86_64 executable built and embedded/platform tests passed on Intel CI |
+| macOS Apple Silicon | Apple Clang | Full arm64 executable built and embedded/platform tests passed on ARM CI |
+
+The first full-game CI run passed all three targets:
+https://github.com/meizfl/skydream/actions/runs/42591220037 (2026-11-09).
+This executes the headless embedded-data smoke test, not the game entry point
+or rendering. See [private full builds](PRIVATE_FULL_BUILDS.md) for encrypted
+artifacts and required private inputs.
 
 MSVC is not supported: the recompiled code and native ABI headers use GNU C/C++
 extensions. CMake emits a clear diagnostic rather than selecting incompatible
