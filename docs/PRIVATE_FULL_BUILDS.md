@@ -72,3 +72,12 @@ A successful run validates a relocatable dependency bundle and a small amount
 of generated game logic. It does not prove correct rendering/gameplay on a
 physical target GPU. Windows still requires a compatible graphics driver;
 macOS builds target macOS 15+ and use ad-hoc signing, not notarization.
+
+## Verified dependency bundles (2026-11-09)
+
+- [Windows x86-64 full package](https://github.com/meizfl/skydream/actions/runs/42624455501): full executable, embedded execution and bundle smoke with MSYS2 removed from PATH passed.
+- [macOS Intel and ARM full packages](https://github.com/meizfl/skydream/actions/runs/42627345063): full executables, embedded execution, relocated-library audit and native shader/Vulkan library smoke passed.
+- [Standalone dependency diagnostics](https://github.com/meizfl/skydream/actions/runs/42627498447): all three targets passed, including SDL2-compat's dynamically loaded SDL3 dependency on macOS.
+
+Artifacts are encrypted, expire after seven days and use the existing artifact
+key. These checks do not exercise a real gameplay session or GPU rendering.
