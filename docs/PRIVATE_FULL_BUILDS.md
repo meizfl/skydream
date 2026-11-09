@@ -81,3 +81,14 @@ macOS builds target macOS 15+ and use ad-hoc signing, not notarization.
 
 Artifacts are encrypted, expire after seven days and use the existing artifact
 key. These checks do not exercise a real gameplay session or GPU rendering.
+
+## Release publication
+
+`Publish tested desktop release draft` accepts successful main-branch full-game
+run IDs and a date-based tag. It authenticates and decrypts the three selected
+archives, rejects game `Data`/key files and unsafe tar members, and creates a
+**draft** release with ordinary `.tar.gz` assets and SHA-256 checksums. The key
+stays in the Actions secret and is never attached to the release. Add the
+current Linux package and review the draft before publishing. This manual
+workflow is for an explicitly authorized plaintext release; normal CI outputs
+remain encrypted.

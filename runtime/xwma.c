@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-3.0-only
 /* Native Linux xWMA decoding. Android can still build without FFmpeg. */
 #include "xwma.h"
 #include <stdlib.h>
@@ -31,7 +30,12 @@ static int open_codec(XWmaDecoder *d) {
     c->bit_rate = (int64_t)d->average_bytes * 8;
     c->block_align = d->block_align;
     c->bits_per_coded_sample = d->bits;
+#if LIBAVUTIL_VERSION_MAJOR >= 57
     av_channel_layout_default(&c->ch_layout, d->channels);
+#else
+    c->channels = d->channels;
+    c->channel_layout = av_get_default_channel_layout(d->channels);
+#endif
     /* xWMA omits codec options and sometimes reports an alias bitrate.
      * Match FFmpeg's xWMA container interpretation:
      * https://github.com/FFmpeg/FFmpeg/blob/master/libavformat/xwma.c */
@@ -105,11 +109,20 @@ static int receive_pcm(XWmaDecoder *d, int16_t **pcm, uint32_t *frames) {
     while ((rc = avcodec_receive_frame(d->codec, d->frame)) >= 0) {
         AVFrame *f = d->frame;
         if (!d->swr) {
+#if LIBAVUTIL_VERSION_MAJOR >= 57
             AVChannelLayout output;
             av_channel_layout_default(&output, d->channels);
             rc = swr_alloc_set_opts2(&d->swr, &output, AV_SAMPLE_FMT_S16, d->rate,
                                     &f->ch_layout, f->format, f->sample_rate, 0, NULL);
             av_channel_layout_uninit(&output);
+#else
+            int64_t input_layout = f->channel_layout;
+            if (!input_layout) input_layout = av_get_default_channel_layout(f->channels);
+            d->swr = swr_alloc_set_opts(NULL, av_get_default_channel_layout(d->channels),
+                                       AV_SAMPLE_FMT_S16, d->rate, input_layout,
+                                       f->format, f->sample_rate, 0, NULL);
+            rc = d->swr ? 0 : AVERROR(ENOMEM);
+#endif
             if (rc < 0 || swr_init(d->swr) < 0) return -1;
         }
         int count = swr_get_out_samples(d->swr, f->nb_samples);
