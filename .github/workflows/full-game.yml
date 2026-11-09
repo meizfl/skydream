@@ -73,9 +73,7 @@ jobs:
           test "$(lipo -archs build/Skydream)" = "${{ matrix.arch }}"
           ctest --test-dir build/native/desktop --output-on-failure
           cmake --install build/native --prefix "$PWD/build/stage"
-          env PATH=/usr/bin:/bin DYLD_PRINT_LIBRARIES=1 build/stage/Skydream --bundle-smoke > build/bundle-smoke.log 2>&1
-          cat build/bundle-smoke.log
-          if grep -E "dyld.*(/opt/homebrew/|/usr/local/(Cellar|opt)/)" build/bundle-smoke.log; then exit 1; fi
+          python tools/test_desktop_bundle.py build/stage/Skydream --bundle-smoke
       - name: Windows full build and embedded execution
         if: runner.os == 'Windows'
         shell: msys2 {0}
@@ -86,11 +84,7 @@ jobs:
           cmake --install build/native --prefix "$PWD/build/stage"
       - name: Windows package test without MSYS2 on PATH
         if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
-          & .\build\stage\Skydream.exe --bundle-smoke
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        run: python tools/test_desktop_bundle.py build/stage/Skydream.exe --bundle-smoke
       - name: Encrypt tested build
         env:
           SKYDREAM_ARTIFACT_KEY: ${{ secrets.SKYDREAM_ARTIFACT_KEY }}

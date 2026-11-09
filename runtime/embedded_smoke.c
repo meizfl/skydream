@@ -38,8 +38,10 @@ int skydream_embedded_smoke(void) {
     return 0;
 }
 int skydream_bundle_smoke(void) {
+    fprintf(stderr, "bundle-smoke: starting HLSL test\n");
     extern int d3dx_shader_selftest(CPU *);
     if (!getenv("SKYDREAM_VKD3D_SHADER") || d3dx_shader_selftest(rt_current_cpu())) return 20;
+    fprintf(stderr, "bundle-smoke: HLSL passed; loading Vulkan loader\n");
     const char *loader = getenv("SDL_VULKAN_LIBRARY");
     void *vk = loader ? SDL_LoadObject(loader) : NULL;
     if (!vk || !SDL_LoadFunction(vk, "vkGetInstanceProcAddr")) return 21;
@@ -47,6 +49,7 @@ int skydream_bundle_smoke(void) {
     char base[4096], path[8192];
     if (rt_host_base_path(base, sizeof base)) return 22;
     snprintf(path, sizeof path, "%s/lib/skyrim-native/libMoltenVK.dylib", base);
+    fprintf(stderr, "bundle-smoke: loader passed; loading MoltenVK\n");
     void *metal = SDL_LoadObject(path);
     if (!metal || !SDL_LoadFunction(metal, "vkGetInstanceProcAddr")) return 23;
 #endif

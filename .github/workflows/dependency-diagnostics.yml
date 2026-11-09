@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: GPL-3.0-only
+name: Native dependency diagnostics
+on: [workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  dependency-check:
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel, windows-latest]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja pkg-config sdl2 vulkan-headers ffmpeg molten-vk vulkan-loader bison flex
+      - uses: msys2/setup-msys2@v2
+        if: runner.os == 'Windows'
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            bison flex make perl
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-python
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-SDL2
+            mingw-w64-ucrt-x86_64-vulkan-headers
+            mingw-w64-ucrt-x86_64-vulkan-loader
+            mingw-w64-ucrt-x86_64-ffmpeg
+      - name: macOS native shader compiler
+        if: runner.os == 'macOS'
+        run: |
+          export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
+          sh tools/build-desktop-shader.sh
+      - name: Windows native shader compiler
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: sh tools/build-desktop-shader.sh
+      - name: Build and check macOS dependency fixture
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p build/stage/lib/skyrim-native
+          cp build/native-shader/lib/*.dylib build/stage/lib/skyrim-native/
+          cc tests/desktop_dependency_smoke.c -Ithird_party/vkd3d/include $(pkg-config --cflags --libs sdl2 libavcodec libavformat libavutil libswresample libswscale) -o build/stage/Skydream
+          python tools/bundle_desktop.py build/stage
+          python tools/test_desktop_bundle.py build/stage/Skydream
+      - name: Build Windows dependency fixture
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          mkdir -p build/stage
+          cp build/native-shader/bin/*.dll build/stage/
+          gcc tests/desktop_dependency_smoke.c -Ithird_party/vkd3d/include $(pkg-config --cflags --libs sdl2 libavcodec libavformat libavutil libswresample libswscale) -o build/stage/Skydream.exe
+          python tools/bundle_desktop.py build/stage
+      - name: Check Windows fixture without MSYS2
+        if: runner.os == 'Windows'
+        run: python tools/test_desktop_bundle.py build/stage/Skydream.exe
