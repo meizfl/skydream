@@ -87,8 +87,14 @@ void xwma_destroy(XWmaDecoder *d) {
 
 void xwma_reset(XWmaDecoder *d) {
     if (!d || !d->codec) return;
-    avcodec_flush_buffers(d->codec);
     swr_free(&d->swr);
+#if LIBAVUTIL_VERSION_MAJOR < 57
+    /* FFmpeg 4 retains WMAv2 overlap history after flush_buffers. */
+    avcodec_free_context(&d->codec);
+    if (open_codec(d) < 0) avcodec_free_context(&d->codec);
+#else
+    avcodec_flush_buffers(d->codec);
+#endif
     d->finished = 0;
     d->next_pts = 0;
 }
@@ -148,6 +154,7 @@ int xwma_decode(XWmaDecoder *d, const uint8_t *data, size_t bytes,
     if (!d || !d->codec || (!data && bytes)) return -1;
     if (!bytes && !end_of_stream) return 0;
     if (d->finished) xwma_reset(d);
+    if (!d->codec || !avcodec_is_open(d->codec)) return -1;
     size_t packet_size = packets && bytes ? bytes / packets : (size_t)d->block_align;
     if (!packet_size || packet_size > INT_MAX || (packets && bytes % packets)) return -1;
     AVPacket *packet = av_packet_alloc();
