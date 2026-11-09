@@ -160,7 +160,11 @@ static void bundle_env_file(const char *name, const char *base, const char *rela
     SDL_RWops *file = SDL_RWFromFile(path, "rb");
     if (file) {
         SDL_RWclose(file);
-        SDL_setenv(name, path, 0);
+#ifdef _WIN32
+        rt_host_setenv(name, path, 0);
+#else
+        setenv(name, path, 0);
+#endif
     }
 }
 void rt_host_bundle_environment(void) {

@@ -22,8 +22,10 @@ static void *load(const char *base, const char *name) {
     if(!lib) fprintf(stderr,"dependency-smoke: %s\n",SDL_GetError());
     return lib;
 }
-int main(void) {
-    fprintf(stderr,"dependency-smoke: entered main, FFmpeg %u/%u/%u/%u/%u\n",avcodec_version(),avformat_version(),avutil_version(),swresample_version(),swscale_version());
+int main(int argc, char **argv) {
+    fprintf(stderr,"dependency-smoke: entered main\n");fflush(stderr);
+    fprintf(stderr,"dependency-smoke: FFmpeg %u/%u/%u/%u/%u\n",avcodec_version(),avformat_version(),avutil_version(),swresample_version(),swscale_version());
+    if(argc>1 && !strcmp(argv[1],"--startup-only")) return 0;
     char *base=SDL_GetBasePath();
 #ifdef __APPLE__
     const char *shader="lib/skyrim-native/libvkd3d-shader.1.dylib", *vulkan="lib/skyrim-native/libvulkan.1.dylib";

@@ -2,6 +2,12 @@
 name: Private full game build checks
 on:
   workflow_dispatch:
+    inputs:
+      platforms:
+        description: Platforms to build
+        type: choice
+        default: all
+        options: [all, macos, windows]
 permissions:
   contents: read
 jobs:
@@ -12,13 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - runner: macos-15-intel
-            arch: x86_64
-          - runner: macos-15
-            arch: arm64
-          - runner: windows-latest
-            arch: x86_64
+        include: ${{ fromJSON(inputs.platforms == 'windows' && '[{"runner":"windows-latest","arch":"x86_64"}]' || inputs.platforms == 'macos' && '[{"runner":"macos-15-intel","arch":"x86_64"},{"runner":"macos-15","arch":"arm64"}]' || '[{"runner":"macos-15-intel","arch":"x86_64"},{"runner":"macos-15","arch":"arm64"},{"runner":"windows-latest","arch":"x86_64"}]') }}
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
