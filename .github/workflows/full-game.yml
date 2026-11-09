@@ -62,6 +62,9 @@ jobs:
           test "$(lipo -archs build/lb)" = "${{ matrix.arch }}"
           ctest --test-dir build/native/desktop --output-on-failure
           cmake --install build/native --prefix "$PWD/build/stage"
+          codesign --force --sign - build/stage/lib/skyrim-native/libdxvk_d3d9.dylib
+          codesign --force --sign - build/stage/bin/lb
+          build/stage/bin/lb --embedded-smoke
       - name: Windows full build and embedded execution
         if: runner.os == 'Windows'
         shell: msys2 {0}
@@ -70,6 +73,7 @@ jobs:
           cmake --build --preset desktop --parallel 3
           ctest --test-dir build/native/desktop --output-on-failure
           cmake --install build/native --prefix "$PWD/build/stage"
+          build/stage/bin/lb.exe --embedded-smoke
       - name: Encrypt tested build
         env:
           SKYDREAM_ARTIFACT_KEY: ${{ secrets.SKYDREAM_ARTIFACT_KEY }}
