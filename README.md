@@ -148,7 +148,8 @@ signing is not Apple notarization.
 
 The manual **Private full game build checks** workflow builds both Mac
 architectures and Windows, verifies the relocated packages and uploads encrypted
-archives. See [private CI and decryption](docs/PRIVATE_FULL_BUILDS.md).
+archives. Its `Platforms to build` choice accepts `all`, `macos` or `windows`.
+SDL2-compat installations also include the dynamically loaded SDL3 dependency. See [private CI and decryption](docs/PRIVATE_FULL_BUILDS.md).
 
 ## Build dependencies
 

@@ -50,10 +50,16 @@ to overwrite existing output, and creates the decrypted file with private
 permissions. The `.enc` format consists of `SKYDREAM-ARCHIVE-1\n`, a 12-byte nonce,
 and AES-GCM ciphertext with its tag; the magic is authenticated associated data.
 
-The archive includes the installed executable, DXVK and project license files.
-It is a development install, not a standalone dependency bundle: SDL2, FFmpeg
-and compiler runtime libraries must be installed on the target system, along
-with the graphics/compiler dependencies described in `BUILDING_DESKTOP.md`.
+The archive includes root-level `Skydream` / `Skydream.exe`, DXVK, SDL2,
+FFmpeg, target-native vkd3d-shader and the non-system dependency closure. Mac
+packages also include Vulkan Loader, MoltenVK and an ICD manifest. Windows
+packages include Vulkan Loader but use the GPU vendor's installed ICD/driver.
+Install requires no Homebrew/MSYS2 on the destination system. Dependency
+identities, binary hashes and available license files are under `share/`.
+
+The `--bundle-smoke` check executes native HLSL compilation and loads the
+packaged Vulkan libraries without creating a graphics window. Windows runs it
+with MSYS2 removed from PATH; macOS checks the loaded dylibs for Homebrew paths.
 
 The `embedded-game` CTest runs `lb --embedded-smoke` without a window or game
 assets. It reserves the compatibility address space, initializes shims/thread
@@ -62,7 +68,7 @@ tables, and runs the retained recompiled TESV `strchr` implementation against
 four cases. This checks complete linking and a small amount of actual generated
 code execution, not game startup, save loading, GPU rendering or gameplay.
 
-A successful run does not produce a playable distribution. Full graphics still
-needs target-OS vkd3d-shader 2.0 and, on macOS, Vulkan/MoltenVK. Those dependencies
-are not used by this headless check. Packaging and graphics validation remain
-separate work.
+A successful run validates a relocatable dependency bundle and a small amount
+of generated game logic. It does not prove correct rendering/gameplay on a
+physical target GPU. Windows still requires a compatible graphics driver;
+macOS builds target macOS 15+ and use ad-hoc signing, not notarization.

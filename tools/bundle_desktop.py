@@ -17,7 +17,8 @@ def run(*args):
 
 
 def mac_deps(path):
-    return [line.strip().split(' (compatibility')[0] for line in run('otool', '-L', path).splitlines()[1:]]
+    ids = {line.strip() for line in run('otool', '-D', path).splitlines()[1:]}
+    return [dep for line in run('otool', '-L', path).splitlines()[1:] if (dep := line.strip().split(' (compatibility')[0]) not in ids]
 
 
 def win_deps(path):
@@ -42,11 +43,17 @@ def bundle(stage):
         prefix = Path(run('brew', '--prefix'))
         search = [libdir, prefix/'lib']
         extras = [Path(run('brew', '--prefix', pkg))/'lib'/name for pkg, name in [('molten-vk','libMoltenVK.dylib'), ('vulkan-loader','libvulkan.1.dylib')]]
+        # SDL2-compat loads SDL3 with dlopen, so otool cannot discover it.
+        sdl3 = Path(run('brew', '--prefix', 'sdl3'))/'lib/libSDL3.dylib'
+        if sdl3.exists():
+            extras.append(sdl3)
     else:
         # Called from UCRT64: avoid mixing MSYS runtime DLLs into native output.
         search = [Path(run('cygpath', '-w', '/ucrt64/bin')), stage]
         prefix = search[0].parent
         extras = [search[0]/'vulkan-1.dll']
+        if (search[0]/'SDL3.dll').exists():
+            extras.append(search[0]/'SDL3.dll')
     def add(src):
         src = src.resolve()
         name = src.name.lower()

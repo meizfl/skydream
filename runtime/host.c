@@ -155,7 +155,7 @@ int rt_host_cpu_count(void) { return SDL_GetCPUCount(); }
 
 static void bundle_env_file(const char *name, const char *base, const char *relative) {
     char path[8192];
-    if (SDL_getenv(name)) return;
+    if (getenv(name) || SDL_getenv(name)) return;
     if (snprintf(path, sizeof path, "%s/%s", base, relative) >= (int)sizeof path) return;
     SDL_RWops *file = SDL_RWFromFile(path, "rb");
     if (file) {
@@ -165,6 +165,8 @@ static void bundle_env_file(const char *name, const char *base, const char *rela
 #else
         setenv(name, path, 0);
 #endif
+        /* SDL2-compat also maintains SDL3's environment cache. */
+        SDL_setenv(name, path, 1);
     }
 }
 void rt_host_bundle_environment(void) {
