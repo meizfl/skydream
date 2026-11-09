@@ -120,8 +120,10 @@ void rt_init_shims(void) {
     {
         extern void engine_primitives_init(void);
         extern void engine_strings_init(void);
+        extern void physics_timing_init(void);
         engine_primitives_init();
         engine_strings_init();
+        physics_timing_init();
     }
 #endif
 }

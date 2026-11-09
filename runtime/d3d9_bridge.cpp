@@ -157,13 +157,16 @@ static void pp_from_guest(uint32_t g, D3DPRESENT_PARAMETERS *pp) {
     pp->Flags = M32(g + 44);
     pp->FullScreen_RefreshRateInHz = 0;
     pp->PresentationInterval = M32(g + 52);
-    // The VSync menu item controls the touch overlay instead (touch.cpp).
-    // Phones always present with vsync; desktop test runs never wait for it.
-    if (touch_available())
 #ifdef __ANDROID__
-        pp->PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+    // The phone VSync menu item controls the touch overlay instead.
+    if (touch_available()) pp->PresentationInterval = D3DPRESENT_INTERVAL_ONE;
 #else
-        pp->PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+    // Desktop simulation has its own fixed clock. Keep presentation uncapped
+    // across CreateDevice and Reset, without depending on dxvk.conf or the
+    // guest's VSync value being reapplied during a mode change.
+    const char *vsync = getenv("SKYDREAM_VSYNC");
+    pp->PresentationInterval = vsync && !strcmp(vsync, "1")
+        ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
 #endif
     if (pp->BackBufferFormat == D3DFMT_UNKNOWN) pp->BackBufferFormat = D3DFMT_X8R8G8B8;
 }

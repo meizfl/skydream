@@ -451,7 +451,9 @@ void skyrim_seed_prefs(int w, int h) {
     snprintf(v, sizeof v, "%d", h);
     ini_set(f, "Display", "iSize H", v);
     ini_set(f, "Display", "bFull Screen", "1");
-    ini_set(f, "Display", "iPresentInterval", "1");
+    /* Seed VSync only if absent. Existing users must be able to uncap FPS. */
+    if (!ini_find(f, "Display", "iPresentInterval"))
+        ini_set(f, "Display", "iPresentInterval", "1");
 #ifdef __ANDROID__
     ini_set(f, "MAIN", "bGamepadEnable", "1");
 #else

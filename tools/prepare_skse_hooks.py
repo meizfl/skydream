@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 
 def prepare(folder):
-    targets = {0xA60200, 0x842140, 0x873D70, 0xF537F0, 0xF52E30, 0xA4A4E0, 0xA4A530, 0xA4A570, 0xF5B670, 0xF520F0, 0xF55A90, 0xF59140}
+    targets = {0xA60200, 0x842140, 0x873D70, 0xF537F0, 0xF52E30, 0xA4A4E0, 0xA4A530, 0xA4A570, 0xF5B670, 0xF520F0, 0xF55A90, 0xF59140, 0xD0DB50, 0xD4EE40, 0xD50ED0}
     found = set()
     changes = []
     for p in sorted(Path(folder).glob('exe_*.c')):
@@ -29,6 +29,8 @@ def prepare(folder):
         raise ValueError('Missing generated functions: ' + ', '.join(f'{x:X}' for x in targets-found))
     for p, new in changes:
         p.write_text(new)
+    from prepare_physics_motion import prepare as prepare_motion
+    prepare_motion(folder)
     return len(changes)
 
 if __name__ == '__main__':

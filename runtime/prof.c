@@ -66,8 +66,10 @@ void prof_report(void) {
     {
         extern void engine_primitives_report(void);
         extern void engine_strings_report(void);
+        extern void physics_timing_report(void);
         engine_primitives_report();
         engine_strings_report();
+        physics_timing_report();
     }
 #endif
     if (!g_prof_on) return;
