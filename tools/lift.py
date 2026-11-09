@@ -149,7 +149,7 @@ HOST_OVERRIDES_MARVEL = {
             0x6E7AA0},  # runtime shader compile (D3DCompile): serialised -> runtime/marvel_shims.c
     "d3dc": {0x9066C20, 0x9067AD0},  # D3DCompile/D3DPreprocess: progress, timing, warm-up gate -> runtime/marvel_shims.c
 }
-HOST_OVERRIDES_SKYRIM = {"exe": {0xA60200, 0x842140, 0x873D70, 0xF537F0, 0xF52E30, 0xA4A4E0, 0xA4A530, 0xA4A570}}
+HOST_OVERRIDES_SKYRIM = {"exe": {0xA60200, 0x842140, 0x873D70, 0xF537F0, 0xF52E30, 0xA4A4E0, 0xA4A530, 0xA4A570, 0xF5B670, 0xF520F0, 0xF55A90, 0xF59140}}
 # LIFT_GAME=marvel|skyrim selects the overrides (runtime built with -DGAME_MARVEL / -DGAME_SKYRIM).
 HOST_OVERRIDES = {"marvel": HOST_OVERRIDES_MARVEL, "skyrim": HOST_OVERRIDES_SKYRIM}.get(
     os.environ.get("LIFT_GAME"), HOST_OVERRIDES_BATMAN)

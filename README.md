@@ -32,6 +32,12 @@ For a direct portable launch, place a `portable-profile` directory beside the ga
 
 Five hot TESV entry points now use independent native memory-move/CRC cores with 64-bit host pointers and size_t. The old guest ABI remains only at their adapters; this is not a fully migrated 64-bit object model. See [incremental engine replacement](docs/NATIVE_ENGINE.md) for call counts, differential tests and diagnostic fallback.
 
+Four byte-string entry points now also use native host-width libc cores (length,
+character/byte search, padded copy), with no mutable shared state or per-call
+worker creation. Validation includes original-body differential checks, protected
+memory boundaries and 16 simultaneous callers. The guest ABI remains 32-bit at
+the adapter boundary; see [native engine progress](docs/NATIVE_ENGINE.md).
+
 
 Generated TESV bodies are conservatively deduplicated by exact equality after local-label renaming. Guest entry addresses remain intact; structurally similar functions with differing constants are only reported for review. See [function-family audit](docs/DEDUPLICATION.md).
 
