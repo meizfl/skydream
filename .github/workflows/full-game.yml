@@ -39,13 +39,14 @@ jobs:
         run: python tools/ci_game_input.py fetch
       - name: macOS dependencies
         if: runner.os == 'macOS'
-        run: brew install cmake ninja pkg-config sdl2 vulkan-headers ffmpeg
+        run: brew install cmake ninja pkg-config sdl2 vulkan-headers ffmpeg molten-vk vulkan-loader bison flex
       - uses: msys2/setup-msys2@v2
         if: runner.os == 'Windows'
         with:
           msystem: UCRT64
           update: true
           install: >-
+            bison flex make perl
             mingw-w64-ucrt-x86_64-toolchain
             mingw-w64-ucrt-x86_64-cmake
             mingw-w64-ucrt-x86_64-ninja
@@ -53,27 +54,43 @@ jobs:
             mingw-w64-ucrt-x86_64-pkgconf
             mingw-w64-ucrt-x86_64-SDL2
             mingw-w64-ucrt-x86_64-vulkan-headers
+            mingw-w64-ucrt-x86_64-vulkan-loader
             mingw-w64-ucrt-x86_64-ffmpeg
+      - name: macOS native shader compiler
+        if: runner.os == 'macOS'
+        run: |
+          export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
+          sh tools/build-desktop-shader.sh
+      - name: Windows native shader compiler
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: sh tools/build-desktop-shader.sh
       - name: macOS full build and embedded execution
         if: runner.os == 'macOS'
         run: |
-          cmake --preset desktop -DCMAKE_PREFIX_PATH="$(brew --prefix)" -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON -DSKYDREAM_ROOT_PACKAGE=ON -DLB_GEN_JOBS=2
+          cmake --preset desktop -DCMAKE_PREFIX_PATH="$(brew --prefix)" -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON -DSKYDREAM_ROOT_PACKAGE=ON -DSKYDREAM_BUNDLE_DEPS=ON -DLB_GEN_JOBS=2
           cmake --build --preset desktop --parallel 3
           test "$(lipo -archs build/Skydream)" = "${{ matrix.arch }}"
           ctest --test-dir build/native/desktop --output-on-failure
           cmake --install build/native --prefix "$PWD/build/stage"
-          codesign --force --sign - build/stage/lib/skyrim-native/libdxvk_d3d9.dylib
-          codesign --force --sign - build/stage/Skydream
-          build/stage/Skydream --embedded-smoke
+          env PATH=/usr/bin:/bin DYLD_PRINT_LIBRARIES=1 build/stage/Skydream --bundle-smoke > build/bundle-smoke.log 2>&1
+          cat build/bundle-smoke.log
+          if grep -E "dyld.*(/opt/homebrew/|/usr/local/(Cellar|opt)/)" build/bundle-smoke.log; then exit 1; fi
       - name: Windows full build and embedded execution
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
-          cmake --preset desktop -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON -DSKYDREAM_ROOT_PACKAGE=ON -DLB_GEN_JOBS=2
+          cmake --preset desktop -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON -DSKYDREAM_ROOT_PACKAGE=ON -DSKYDREAM_BUNDLE_DEPS=ON -DLB_GEN_JOBS=2
           cmake --build --preset desktop --parallel 3
           ctest --test-dir build/native/desktop --output-on-failure
           cmake --install build/native --prefix "$PWD/build/stage"
-          build/stage/Skydream.exe --embedded-smoke
+      - name: Windows package test without MSYS2 on PATH
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
+          & .\build\stage\Skydream.exe --bundle-smoke
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Encrypt tested build
         env:
           SKYDREAM_ARTIFACT_KEY: ${{ secrets.SKYDREAM_ARTIFACT_KEY }}

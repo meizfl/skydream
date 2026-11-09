@@ -1,16 +1,20 @@
-Skydream desktop development build
+Skydream portable desktop runtime
 
 Put Data/ from Skyrim Legendary Edition 1.9.32 beside Skydream (Skydream.exe
-on Windows). Keep the lib/ directory beside the executable on macOS/Linux.
+on Windows). Keep all bundled directories/libraries beside the executable.
 Launch Skydream without arguments, or pass a game directory explicitly.
+No Homebrew or MSYS2 installation is required on the target computer.
 
-This is a native desktop executable, not a shell launcher. Do not mix binaries
-or libraries from different platforms or architectures.
+Packages contain SDL2, FFmpeg, native vkd3d-shader and their runtime dependencies.
+macOS includes Vulkan Loader and MoltenVK. Windows includes Vulkan Loader;
+a compatible Vulkan-capable GPU driver must still be installed by its vendor.
+Do not mix libraries from different platforms or architectures.
 
-The development package currently requires target-system SDL2, FFmpeg and a
-native vkd3d-shader 2.0 compiler. macOS graphics also requires Vulkan/MoltenVK.
-Headless verification: Skydream --embedded-smoke
-GPU rendering/gameplay on macOS and Windows has not been validated by that test.
+Verification without game assets or a graphics window:
+  Skydream --bundle-smoke
+This checks embedded game data, generated code, native HLSL compilation and
+loading of packaged graphics libraries. It does not validate actual gameplay.
+macOS requires macOS 15 or newer; Windows targets Windows 10/11 x86-64.
 
-Source, build/dependency instructions and licenses:
-https://github.com/meizfl/skydream
+Sources, dependencies and license metadata are included under share/.
+Project source and build instructions: https://github.com/meizfl/skydream

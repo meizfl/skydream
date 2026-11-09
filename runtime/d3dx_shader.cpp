@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Native HLSL -> SM1-3 compiler and D3DX buffer/constant-table ABI.
- * Compiler: vkd3d-shader (LGPL-2.1-or-later), loaded as a native ELF library.
+ * Compiler: vkd3d-shader (LGPL-2.1-or-later), loaded as a native shared library.
  */
 #include "../third_party/vkd3d/include/vkd3d_shader.h"
 #include "d3d9_bridge.h"

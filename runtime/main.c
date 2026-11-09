@@ -518,11 +518,17 @@ static void desktop_paths(int argc, char **argv) {
 
 int main(int argc, char **argv) {
     install_crash_handler();
+    rt_host_bundle_environment();
 #if defined(SKYDREAM_EMBEDDED_IMAGE) && !defined(__ANDROID__)
     /* No SDL video, game directory, writable profile or GPU is needed. */
-    if (argc == 2 && !strcmp(argv[1], "--embedded-smoke")) {
+    if (argc == 2 && (!strcmp(argv[1], "--embedded-smoke") || !strcmp(argv[1], "--bundle-smoke"))) {
         extern int skydream_embedded_smoke(void);
-        return skydream_embedded_smoke();
+        int result = skydream_embedded_smoke();
+        if (!result && !strcmp(argv[1], "--bundle-smoke")) {
+            extern int skydream_bundle_smoke(void);
+            result = skydream_bundle_smoke();
+        }
+        return result;
     }
 #endif
     const char *env = getenv("LB_LOG");

@@ -3,6 +3,7 @@
 #include "embedded_image.h"
 #include "rt_table.h"
 #include <string.h>
+#include <SDL2/SDL.h>
 #if defined(SKYDREAM_EMBEDDED_IMAGE) && defined(GAME_SKYRIM)
 /* Execute the retained recompiled implementation, not its native replacement. */
 extern void f_F520F0_guest(CPU *c); /* strchr */
@@ -34,6 +35,22 @@ int skydream_embedded_smoke(void) {
         c->r[4] = esp;
     }
     puts("embedded-smoke: image, imports, tables and recompiled strchr passed");
+    return 0;
+}
+int skydream_bundle_smoke(void) {
+    extern int d3dx_shader_selftest(CPU *);
+    if (!getenv("SKYDREAM_VKD3D_SHADER") || d3dx_shader_selftest(rt_current_cpu())) return 20;
+    const char *loader = getenv("SDL_VULKAN_LIBRARY");
+    void *vk = loader ? SDL_LoadObject(loader) : NULL;
+    if (!vk || !SDL_LoadFunction(vk, "vkGetInstanceProcAddr")) return 21;
+#ifdef __APPLE__
+    char base[4096], path[8192];
+    if (rt_host_base_path(base, sizeof base)) return 22;
+    snprintf(path, sizeof path, "%s/lib/skyrim-native/libMoltenVK.dylib", base);
+    void *metal = SDL_LoadObject(path);
+    if (!metal || !SDL_LoadFunction(metal, "vkGetInstanceProcAddr")) return 23;
+#endif
+    puts("bundle-smoke: native HLSL compiler and packaged Vulkan libraries passed");
     return 0;
 }
 #endif

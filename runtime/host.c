@@ -152,3 +152,29 @@ int rt_host_match(const char *pattern, const char *name) {
 }
 
 int rt_host_cpu_count(void) { return SDL_GetCPUCount(); }
+
+static void bundle_env_file(const char *name, const char *base, const char *relative) {
+    char path[8192];
+    if (SDL_getenv(name)) return;
+    if (snprintf(path, sizeof path, "%s/%s", base, relative) >= (int)sizeof path) return;
+    SDL_RWops *file = SDL_RWFromFile(path, "rb");
+    if (file) {
+        SDL_RWclose(file);
+        SDL_setenv(name, path, 0);
+    }
+}
+void rt_host_bundle_environment(void) {
+    char base[4096];
+    if (rt_host_base_path(base, sizeof base)) return;
+#ifdef _WIN32
+    bundle_env_file("SKYDREAM_VKD3D_SHADER", base, "libvkd3d-shader-1.dll");
+    bundle_env_file("SDL_VULKAN_LIBRARY", base, "vulkan-1.dll");
+#elif defined(__APPLE__)
+    bundle_env_file("SKYDREAM_VKD3D_SHADER", base, "lib/skyrim-native/libvkd3d-shader.1.dylib");
+    bundle_env_file("SDL_VULKAN_LIBRARY", base, "lib/skyrim-native/libvulkan.1.dylib");
+    if (!SDL_getenv("VK_ICD_FILENAMES"))
+        bundle_env_file("VK_DRIVER_FILES", base, "share/vulkan/icd.d/MoltenVK_icd.json");
+#else
+    bundle_env_file("SKYDREAM_VKD3D_SHADER", base, "lib/skyrim-native/libvkd3d-shader.so.1");
+#endif
+}

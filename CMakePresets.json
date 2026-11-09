@@ -1,21 +1,96 @@
 {
   "version": 3,
-  "cmakeMinimumRequired": {"major": 3, "minor": 21, "patch": 0},
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
   "configurePresets": [
     {
-      "name": "desktop", "displayName": "Native desktop (Linux, MinGW Windows, macOS)",
-      "generator": "Ninja", "binaryDir": "${sourceDir}/build/native",
-      "cacheVariables": {"CMAKE_BUILD_TYPE": "Release", "LB_GEN_JOBS": "2"}
+      "name": "desktop",
+      "displayName": "Native desktop (Linux, MinGW Windows, macOS)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/native",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "LB_GEN_JOBS": "2"
+      }
     },
     {
-      "name": "host-check", "inherits": "desktop",
+      "name": "host-check",
+      "inherits": "desktop",
       "displayName": "Host runtime and renderer, without private game code",
       "binaryDir": "${sourceDir}/build/host-check",
-      "cacheVariables": {"LB_BUILD_GAME": "OFF", "SKYDREAM_SKSE": "ON", "SKYDREAM_SKYUI": "ON"}
+      "cacheVariables": {
+        "LB_BUILD_GAME": "OFF",
+        "SKYDREAM_SKSE": "ON",
+        "SKYDREAM_SKYUI": "ON"
+      }
+    },
+    {
+      "name": "linux",
+      "inherits": "desktop",
+      "binaryDir": "${sourceDir}/build/linux",
+      "cacheVariables": {
+        "SKYDREAM_ROOT_PACKAGE": "ON"
+      }
+    },
+    {
+      "name": "windows",
+      "inherits": "desktop",
+      "binaryDir": "${sourceDir}/build/windows",
+      "cacheVariables": {
+        "SKYDREAM_ROOT_PACKAGE": "ON",
+        "SKYDREAM_BUNDLE_DEPS": "ON"
+      }
+    },
+    {
+      "name": "macos-intel",
+      "inherits": "desktop",
+      "binaryDir": "${sourceDir}/build/macos-intel",
+      "cacheVariables": {
+        "SKYDREAM_ROOT_PACKAGE": "ON",
+        "SKYDREAM_BUNDLE_DEPS": "ON",
+        "CMAKE_OSX_ARCHITECTURES": "x86_64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "15.0"
+      }
+    },
+    {
+      "name": "macos-arm64",
+      "inherits": "desktop",
+      "binaryDir": "${sourceDir}/build/macos-arm64",
+      "cacheVariables": {
+        "SKYDREAM_ROOT_PACKAGE": "ON",
+        "SKYDREAM_BUNDLE_DEPS": "ON",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "15.0"
+      }
     }
   ],
   "buildPresets": [
-    {"name": "desktop", "configurePreset": "desktop"},
-    {"name": "host-check", "configurePreset": "host-check"}
+    {
+      "name": "desktop",
+      "configurePreset": "desktop"
+    },
+    {
+      "name": "host-check",
+      "configurePreset": "host-check"
+    },
+    {
+      "name": "linux",
+      "configurePreset": "linux"
+    },
+    {
+      "name": "windows",
+      "configurePreset": "windows"
+    },
+    {
+      "name": "macos-intel",
+      "configurePreset": "macos-intel"
+    },
+    {
+      "name": "macos-arm64",
+      "configurePreset": "macos-arm64"
+    }
   ]
 }

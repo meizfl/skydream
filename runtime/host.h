@@ -23,6 +23,8 @@ ssize_t rt_host_read(int fd, void *data, size_t bytes);
 ssize_t rt_host_write(int fd, const void *data, size_t bytes);
 int64_t rt_host_lseek(int fd, int64_t offset, int origin);
 #endif
+/* Prefer optional runtime libraries shipped beside the executable. */
+void rt_host_bundle_environment(void);
 #ifdef __cplusplus
 }
 #endif

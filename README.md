@@ -21,7 +21,7 @@ This source repository contains no game executable, DLL, assets, saves, lifted g
 
 See [desktop build instructions and platform validation](docs/BUILDING_DESKTOP.md) for Windows, macOS Intel and macOS arm64 builds.
 
-This remains experimental. Broad gameplay, mod compatibility, other executable versions and other Linux distributions have not been validated. Native dependencies are resolved from the host system; a packaged game folder is not a universal AppImage.
+This remains experimental. Broad gameplay, mod compatibility, other executable versions and other Linux distributions have not been validated. The Linux package is not a universal AppImage. Windows/macOS portable installs bundle non-system dependencies; GPU/OS compatibility still needs destination testing.
 
 ## Experimental SKSE compatibility
 
@@ -48,6 +48,107 @@ uncapped without dxvk.conf. See [physics timing](docs/PHYSICS_TIMING.md).
 
 
 Generated TESV bodies are conservatively deduplicated by exact equality after local-label renaming. Guest entry addresses remain intact; structurally similar functions with differing constants are only reported for review. See [function-family audit](docs/DEDUPLICATION.md).
+
+## Native build commands: Linux, Windows, macOS
+
+All full builds require `gen/` (including `gen/image/`) generated from your own
+Skyrim 1.9.32 input; see **Supply game inputs** and **Generate and compile** below.
+The generated tree can be prepared on Linux and used on the other targets.
+Run commands from the repository root. Use `--parallel 16` if memory allows;
+`LB_GEN_JOBS` independently limits the large generated units (2 is the safe default).
+
+### Ordinary Linux build
+
+Install the Debian/Ubuntu dependencies below, activate the Python environment,
+and generate the game code. Then:
+
+```sh
+sh tools/build-desktop-shader.sh
+cmake --preset linux -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON -DLB_GEN_JOBS=2
+cmake --build --preset linux --parallel 16
+ctest --test-dir build/linux/desktop --output-on-failure
+./build/Skydream /path/to/Skyrim
+```
+
+The existing Linux `desktop/build.sh` / `desktop/package.py` packaging path is
+also retained. Linux dependency packaging is handled by that existing packer.
+
+### Windows x86-64: native MSYS2 UCRT64 build
+
+Use an **MSYS2 UCRT64** shell (not MSYS, CLANG64 or Visual Studio/MSVC):
+
+```sh
+pacman -S --needed bison flex make perl \
+  mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-cmake \
+  mingw-w64-ucrt-x86_64-ninja mingw-w64-ucrt-x86_64-python \
+  mingw-w64-ucrt-x86_64-pkgconf mingw-w64-ucrt-x86_64-SDL2 \
+  mingw-w64-ucrt-x86_64-ffmpeg mingw-w64-ucrt-x86_64-vulkan-headers \
+  mingw-w64-ucrt-x86_64-vulkan-loader
+sh tools/build-desktop-shader.sh
+cmake --preset windows -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON -DLB_GEN_JOBS=2
+cmake --build --preset windows --parallel 16
+ctest --test-dir build/windows/desktop --output-on-failure
+cmake --install build/windows --prefix "$PWD/build/windows-package"
+./build/windows-package/Skydream.exe --bundle-smoke
+```
+
+`build/windows-package` contains `Skydream.exe` and its non-system DLL dependency
+closure. Copy `Data/` beside it and run `Skydream.exe`. MSYS2 is required to build,
+not to run the resulting package. A compatible Vulkan GPU driver is still required.
+
+For **compile-only cross-compilation from Linux**, use
+`-DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/mingw64.cmake` and target Windows SDL2,
+FFmpeg/pkg-config and Vulkan header paths. `SKYDREAM_BUNDLE_DEPS=OFF` is required
+for this cross check; it is not the validated native Windows package workflow.
+
+### macOS Intel or Apple Silicon: native build
+
+Build on the matching architecture, with matching Homebrew dependencies:
+
+```sh
+brew install cmake ninja pkg-config python sdl2 ffmpeg vulkan-headers \
+  vulkan-loader molten-vk bison flex
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements.txt
+export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
+sh tools/build-desktop-shader.sh
+
+# Apple Silicon:
+cmake --preset macos-arm64 -DCMAKE_PREFIX_PATH="$(brew --prefix)" \
+  -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON -DLB_GEN_JOBS=2
+cmake --build --preset macos-arm64 --parallel 16
+ctest --test-dir build/macos-arm64/desktop --output-on-failure
+cmake --install build/macos-arm64 --prefix "$PWD/build/macos-package"
+
+# On Intel use macos-intel instead of macos-arm64 in all four commands above.
+./build/macos-package/Skydream --bundle-smoke
+```
+
+The package includes SDL2, FFmpeg, native vkd3d-shader, Vulkan Loader, MoltenVK
+and their non-system dependencies. Install rewrites Mach-O library references
+and applies ad-hoc signatures. Copy `Data/` beside `Skydream` and launch it.
+Homebrew is not required on the target computer. These builds target macOS 15+;
+actual graphics/gameplay still needs testing on the destination Mac. Ad-hoc
+signing is not Apple notarization.
+
+### Build options
+
+| CMake parameter | Effect |
+|---|---|
+| `-DLB_BUILD_GAME=ON` | Link the full game using private generated inputs; default. |
+| `-DLB_BUILD_GAME=OFF` | Check the public host runtime/renderer only; no game executable. |
+| `-DSKYDREAM_ROOT_PACKAGE=ON` | Name the native executable `Skydream` and install it beside `Data`. |
+| `-DSKYDREAM_BUNDLE_DEPS=ON` | Bundle Windows/macOS native dependencies during install; requires native build, root package, FFmpeg and native shader compiler. |
+| `-DSKYDREAM_SKSE=ON` | Enable the experimental SKSE compatibility subset. |
+| `-DSKYDREAM_SKYUI=ON` | Enable SkyUI integration; requires SKSE option. |
+| `-DLB_GEN_JOBS=2` | Limit simultaneous generated-code compilations. |
+| `-DSKYDREAM_SHADER_LIBRARY=/path/to/library` | Override the target-native vkd3d-shader 2.0 library. |
+| `-DSKYDREAM_FFMPEG=OFF` | Compiler checks only; disables videos/compressed voices, not a full package. |
+
+The manual **Private full game build checks** workflow builds both Mac
+architectures and Windows, verifies the relocated packages and uploads encrypted
+archives. See [private CI and decryption](docs/PRIVATE_FULL_BUILDS.md).
 
 ## Build dependencies
 
