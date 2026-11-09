@@ -25,6 +25,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Encryption dependency and key validation
+        env:
+          SKYDREAM_ARTIFACT_KEY: ${{ secrets.SKYDREAM_ARTIFACT_KEY }}
+        run: |
+          python -m pip install cryptography==50.0.2
+          python -c "import sys; sys.path.insert(0, 'tools'); from ci_encrypt_artifact import key_bytes; key_bytes()"
+          python -m unittest discover -s tools -p test_ci_encrypt_artifact.py
       - name: Verify and fetch private generated inputs
         env:
           SKYDREAM_GAME_INPUT_URL: ${{ secrets.SKYDREAM_GAME_INPUT_URL }}
@@ -54,6 +61,7 @@ jobs:
           cmake --build --preset desktop --parallel 3
           test "$(lipo -archs build/lb)" = "${{ matrix.arch }}"
           ctest --test-dir build/native/desktop --output-on-failure
+          cmake --install build/native --prefix "$PWD/build/stage"
       - name: Windows full build and embedded execution
         if: runner.os == 'Windows'
         shell: msys2 {0}
@@ -61,8 +69,19 @@ jobs:
           cmake --preset desktop -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON -DLB_GEN_JOBS=2
           cmake --build --preset desktop --parallel 3
           ctest --test-dir build/native/desktop --output-on-failure
-      # No upload-artifact/cache: binaries and generated sources contain private inputs.
+          cmake --install build/native --prefix "$PWD/build/stage"
+      - name: Encrypt tested build
+        env:
+          SKYDREAM_ARTIFACT_KEY: ${{ secrets.SKYDREAM_ARTIFACT_KEY }}
+        run: python tools/ci_encrypt_artifact.py encrypt build/stage encrypted/Skydream-${{ runner.os }}-${{ matrix.arch }}.tar.gz.enc
+      - uses: actions/upload-artifact@v4
+        with:
+          name: skydream-encrypted-${{ runner.os }}-${{ matrix.arch }}-${{ github.sha }}
+          path: encrypted/*.tar.gz.enc
+          if-no-files-found: error
+          retention-days: 7
+      # Never upload/cache plaintext build products or private generated code.
       - name: Remove private input and build products
         if: always()
         shell: bash
-        run: rm -rf gen build
+        run: rm -rf gen build encrypted
