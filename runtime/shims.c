@@ -116,4 +116,7 @@ void rt_init_shims(void) {
     x3daudio_init();
     bink_init();
     d3dx_init();
+#ifdef GAME_SKYRIM
+    { extern void engine_primitives_init(void); engine_primitives_init(); }
+#endif
 }

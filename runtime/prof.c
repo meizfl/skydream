@@ -62,6 +62,9 @@ static int bin_cmp(const void *a, const void *b) {
 
 /* Called from the watchdog thread: top functions since the last report. */
 void prof_report(void) {
+#ifdef GAME_SKYRIM
+    { extern void engine_primitives_report(void); engine_primitives_report(); }
+#endif
     if (!g_prof_on) return;
     uint32_t end = g_samp_n, start = g_samp_done;
     if (end - start > PROF_N) start = end - PROF_N;

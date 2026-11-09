@@ -29,6 +29,12 @@ The layer registers 90 functions and provides native Scaleform, menu/input/mod-e
 
 For a direct portable launch, place a `portable-profile` directory beside the game binary to keep settings, plugin lists and saves there. Without it, the default XDG profile is used. An explicit SAVE_DIR overrides both.
 
+
+Five hot TESV entry points now use independent native memory-move/CRC cores with 64-bit host pointers and size_t. The old guest ABI remains only at their adapters; this is not a fully migrated 64-bit object model. See [incremental engine replacement](docs/NATIVE_ENGINE.md) for call counts, differential tests and diagnostic fallback.
+
+
+Generated TESV bodies are conservatively deduplicated by exact equality after local-label renaming. Guest entry addresses remain intact; structurally similar functions with differing constants are only reported for review. See [function-family audit](docs/DEDUPLICATION.md).
+
 ## Build dependencies
 
 On Debian/Ubuntu:

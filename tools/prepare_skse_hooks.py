@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-"""Upgrade existing generated code for optional native SKSE hooks, idempotently.
+"""Upgrade existing generated code for native host hooks (SKSE and engine primitives), idempotently.
 Fresh lift.py output already uses the same host-override convention.
 """
 from pathlib import Path
 import sys
 
 def prepare(folder):
-    targets = {0xA60200, 0x842140, 0x873D70}
+    targets = {0xA60200, 0x842140, 0x873D70, 0xF537F0, 0xF52E30, 0xA4A4E0, 0xA4A530, 0xA4A570}
     found = set()
     changes = []
     for p in sorted(Path(folder).glob('exe_*.c')):
@@ -32,4 +32,4 @@ def prepare(folder):
     return len(changes)
 
 if __name__ == '__main__':
-    print('SKSE hooks: updated', prepare(sys.argv[1]), 'generated units')
+    print('Native host hooks: updated', prepare(sys.argv[1]), 'generated units')

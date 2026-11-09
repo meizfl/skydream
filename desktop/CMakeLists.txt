@@ -50,7 +50,7 @@ if(LB_BUILD_GAME)
     execute_process(COMMAND "${Python3_EXECUTABLE}" "${PORT}/tools/prepare_skse_hooks.py" "${PORT}/gen"
         RESULT_VARIABLE SKSE_HOOK_RESULT)
     if(NOT SKSE_HOOK_RESULT EQUAL 0)
-        message(FATAL_ERROR "Cannot prepare optional SKSE hooks in generated game code")
+        message(FATAL_ERROR "Cannot prepare native host hooks in generated game code")
     endif()
 endif()
 
