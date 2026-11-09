@@ -10,7 +10,7 @@ def main():
     env=os.environ.copy()
     if sys.platform=='darwin':
         env['PATH']='/usr/bin:/bin'
-        env['DYLD_PRINT_LIBRARIES']='1'
+        env.pop('DYLD_PRINT_LIBRARIES',None)
     elif sys.platform=='win32':
         env['PATH']=env['SystemRoot']+'\\System32;'+env['SystemRoot']
     command=[str(Path(sys.argv[1]).resolve()),*sys.argv[2:]]

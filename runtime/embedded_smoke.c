@@ -53,6 +53,7 @@ int skydream_bundle_smoke(void) {
     void *metal = SDL_LoadObject(path);
     if (!metal || !SDL_LoadFunction(metal, "vkGetInstanceProcAddr")) return 23;
 #endif
+    if (rt_host_bundle_audit()) return 24;
     puts("bundle-smoke: native HLSL compiler and packaged Vulkan libraries passed");
     return 0;
 }

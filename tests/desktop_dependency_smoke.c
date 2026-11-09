@@ -2,6 +2,10 @@
  * Standalone package diagnostic: no TESV code or private inputs. */
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
+#ifdef main
+#undef main
+#endif
+#include "host.h"
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
@@ -44,5 +48,6 @@ int main(void) {
 #ifdef __APPLE__
     if(!load(base,"lib/skyrim-native/libMoltenVK.dylib")) return 4;
 #endif
+    if(rt_host_bundle_audit()) return 5;
     fprintf(stderr,"dependency-smoke: PASS\n");return 0;
 }

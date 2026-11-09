@@ -178,3 +178,22 @@ void rt_host_bundle_environment(void) {
     bundle_env_file("SKYDREAM_VKD3D_SHADER", base, "lib/skyrim-native/libvkd3d-shader.so.1");
 #endif
 }
+
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+int rt_host_bundle_audit(void) {
+#ifdef __APPLE__
+    for (uint32_t i = 0; i < _dyld_image_count(); ++i) {
+        const char *name = _dyld_get_image_name(i);
+        if (!name) continue;
+        if (!strncmp(name, "/opt/homebrew/", 14) || !strncmp(name, "/usr/local/Cellar/", 18) || !strncmp(name, "/usr/local/opt/", 15)) {
+            fprintf(stderr, "bundle-audit: external Homebrew image %s\n", name);
+            return 1;
+        }
+        if (strncmp(name, "/System/", 8) && strncmp(name, "/usr/lib/", 9))
+            fprintf(stderr, "bundle-image: %s\n", name);
+    }
+#endif
+    return 0;
+}

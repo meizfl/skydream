@@ -25,6 +25,7 @@ int64_t rt_host_lseek(int fd, int64_t offset, int origin);
 #endif
 /* Prefer optional runtime libraries shipped beside the executable. */
 void rt_host_bundle_environment(void);
+int rt_host_bundle_audit(void);
 #ifdef __cplusplus
 }
 #endif

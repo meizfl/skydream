@@ -49,7 +49,7 @@ jobs:
         run: |
           mkdir -p build/stage/lib/skyrim-native
           cp build/native-shader/lib/*.dylib build/stage/lib/skyrim-native/
-          cc tests/desktop_dependency_smoke.c -Ithird_party/vkd3d/include $(pkg-config --cflags --libs sdl2 libavcodec libavformat libavutil libswresample libswscale) -o build/stage/Skydream
+          cc tests/desktop_dependency_smoke.c runtime/host.c -Iruntime -Ithird_party/vkd3d/include $(pkg-config --cflags --libs sdl2 libavcodec libavformat libavutil libswresample libswscale) -o build/stage/Skydream
           python tools/bundle_desktop.py build/stage
           python tools/test_desktop_bundle.py build/stage/Skydream
       - name: Build Windows dependency fixture
@@ -58,7 +58,7 @@ jobs:
         run: |
           mkdir -p build/stage
           cp build/native-shader/bin/*.dll build/stage/
-          gcc tests/desktop_dependency_smoke.c -Ithird_party/vkd3d/include $(pkg-config --cflags --libs sdl2 libavcodec libavformat libavutil libswresample libswscale) -o build/stage/Skydream.exe
+          gcc tests/desktop_dependency_smoke.c runtime/host.c -Iruntime -Ithird_party/vkd3d/include $(pkg-config --cflags --libs sdl2 libavcodec libavformat libavutil libswresample libswscale) -o build/stage/Skydream.exe
           python tools/bundle_desktop.py build/stage
       - name: Check Windows fixture without MSYS2
         if: runner.os == 'Windows'
