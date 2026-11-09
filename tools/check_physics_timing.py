@@ -49,7 +49,7 @@ static CPU cpu(float delta,unsigned complex) {
 }
 int main(void) {
  MEM=calloc(1,0x2000000); assert(MEM);
- setenv("SKYDREAM_PHYSICS_MODE","adaptive",1);
+ unsetenv("SKYDREAM_PHYSICS_MODE"); /* cover the normal binary launch default */
  unsigned addresses[]={0x12D18E4,0x12D18E0,0x12D18DC,0x1BB5E20};
  double rates[]={15,30,60,100,144,240,1000,2000};
  double scales[]={0,0.1,1,2}; unsigned cases=0;

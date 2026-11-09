@@ -37,7 +37,7 @@ static unsigned frame(float submitted,float unscaled){
  assert(MF32(0x12D18DC)==(float)(steps*SKYDREAM_PHYSICS_STEP));return steps;
 }
 int main(void){
- MEM=calloc(1,0x2000000);assert(MEM);unsetenv("SKYDREAM_PHYSICS_MODE");unsetenv("SKYDREAM_HAVOK_FIX");
+ MEM=calloc(1,0x2000000);assert(MEM);setenv("SKYDREAM_PHYSICS_MODE","fixed",1);unsetenv("SKYDREAM_HAVOK_FIX");
  unsigned rates[]={30,60,100,144,240,1000,2000};
  for(unsigned r=0;r<7;r++)for(unsigned slow=0;slow<2;slow++){
    physics_timing_init();ns=1000000000;M32(0x1B4ADF8)=0;float scale=slow?0.1f:1.0f;MF32(0x12C2410)=scale;
@@ -53,6 +53,13 @@ int main(void){
    ns+=1000000;assert(frame(0.001f*scale,0.001f)<=1);
  }
  assert(original_calls==0);
+ /* Normal binary launches must use the stable scheduler and original motion
+  * delta. Fixed batches are unsafe until per-frame controller input is queued. */
+ unsetenv("SKYDREAM_PHYSICS_MODE");physics_timing_init();
+ MF32(0x1B4ADE4)=0.005f;MF32(0x12D18DC)=0.005f;
+ CPU stable={0};stable.r[4]=0x20000;f_D0DB50(&stable);
+ assert(original_calls==1);assert(physics_motion_delta()==0.005f);
+ original_calls=0;
  setenv("SKYDREAM_HAVOK_FIX","0",1);physics_timing_init();CPU c={0};c.r[4]=0x20000;f_D0DB50(&c);assert(original_calls==1);
  free(MEM);puts("PASS: fixed bridge 30..2000 Hz, quantization, pause/resume, slow motion and cdecl ABI");
 }

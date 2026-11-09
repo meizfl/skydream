@@ -38,11 +38,11 @@ worker creation. Validation includes original-body differential checks, protecte
 memory boundaries and 16 simultaneous callers. The guest ABI remains 32-bit at
 the adapter boundary; see [native engine progress](docs/NATIVE_ENGINE.md).
 
-Havok uses a native fixed 60-Hz simulation accumulator driven by high-resolution
-real elapsed time, with separate per-frame character-motion timing. Desktop
-presentation is uncapped by default without dxvk.conf; SKYDREAM_VSYNC=1 enables
-VSync. See [physics timing](docs/PHYSICS_TIMING.md) for modes, validation and
-remaining interpolation limits.
+Havok defaults to adaptive high-resolution timing with the original scheduler
+and character-motion clock. The experimental fixed-step mode is opt-in
+(SKYDREAM_PHYSICS_MODE=fixed) because longer tests exposed NPC freezing/spinning;
+its movement commands still need tick buffering. Desktop presentation remains
+uncapped without dxvk.conf. See [physics timing](docs/PHYSICS_TIMING.md).
 
 
 Generated TESV bodies are conservatively deduplicated by exact equality after local-label renaming. Guest entry addresses remain intact; structurally similar functions with differing constants are only reported for review. See [function-family audit](docs/DEDUPLICATION.md).

@@ -7,7 +7,7 @@
 #include <string.h>
 #include <time.h>
 #ifdef GAME_SKYRIM
-static int enabled = 1, profile, fixed = 1;
+static int enabled = 1, profile, fixed;
 static int was_active;
 static SkydreamPhysicsClock simulation;
 static uint64_t actual_steps, invalid_steps;
@@ -30,10 +30,14 @@ void physics_timing_init(void) {
     enabled = !mode || strcmp(mode, "0");
     profile = getenv("SKYDREAM_PROFILE_PHYSICS") != NULL;
     const char *policy = getenv("SKYDREAM_PHYSICS_MODE");
-    fixed = !policy || strcmp(policy, "adaptive");
+    /* Fixed world stepping alone drops/duplicates per-render character input.
+     * Keep the proven adaptive scheduler until controllers/root motion have a
+     * tick queue. Fixed mode is explicit opt-in for development only. */
+    fixed = policy && !strcmp(policy, "fixed");
     have_previous = 0;
     was_active = 0;
     skydream_physics_reset(&simulation);
+    if (fixed) LOG("WARNING: experimental fixed physics; character input is not tick-buffered");
     LOG("Havok timing: %s", enabled ? (fixed ? "fixed 60-Hz simulation accumulator" : "dynamic high-resolution frame limits") : "original fixed limits");
 }
 void physics_timing_report(void) {

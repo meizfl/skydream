@@ -1,8 +1,22 @@
-# Fixed-step Havok scheduling (TESV 1.9.32)
+# Havok timing and experimental fixed-step scheduling (TESV 1.9.32)
 
-## Current behavior
+## Current stable default
 
-The default physics mode uses a native double-precision accumulator, a fixed
+Normal binary launches use the adaptive high-resolution timing correction,
+with the original scheduler, character timing and per-frame callbacks. This
+preserves the previously tested high-FPS object-stability fix and uncapped
+presentation without enabling zero/one/multiple-step character scheduling.
+
+Longer gameplay exposed freezing, stopping and spinning NPCs in fixed mode.
+Separating four frame-time readers was insufficient: root motion/controller
+commands are produced every render update and are not buffered for skipped
+physics ticks. The first fixed prototype must not be treated as production-safe.
+A fixed world quantum and correct solver arguments alone do not establish
+correct character locomotion. Default fixed mode was therefore withdrawn.
+
+## Experimental fixed mode
+
+With explicit `SKYDREAM_PHYSICS_MODE=fixed`, the development physics mode uses a native double-precision accumulator, a fixed
 **1/60 simulation-second** solver step, and monotonic real elapsed time measured
 at the physics scheduling boundary. Rendering is not capped to 60 FPS. At high
 render rates some frames perform no solver step; at low rates several steps may
@@ -70,9 +84,10 @@ arbitrarily long hangs. Ordinary accepted time is consumed or retained.
 
 ## Modes and unlocked presentation
 
-- Default: fixed-step accumulator, no SKSE required.
-- `SKYDREAM_PHYSICS_MODE=adaptive`: return to the previously tested adaptive
-  high-resolution maximum-step correction.
+- Default (or `SKYDREAM_PHYSICS_MODE=adaptive`): tested adaptive high-resolution
+  maximum-step correction, no SKSE required.
+- `SKYDREAM_PHYSICS_MODE=fixed`: experimental accumulator. Known NPC locomotion
+  regression; development only. Startup emits an explicit warning.
 - `SKYDREAM_HAVOK_FIX=0`: unchanged original scheduler/INI timing behavior.
 - `SKYDREAM_PROFILE_PHYSICS=1`: optional atomic timing and real solver-step
   counters in watchdog reports. `nonfixed` counts solver arguments differing
@@ -105,8 +120,9 @@ changes. Original code is only compiled in a private temporary directory.
 A 95-second Wayland saved-game smoke run reached SkyUI initialization and
 observed 4,612 real solver calls, with zero nonfixed arguments. The first
 prototype's animation regression was corrected by the separate motion clock;
-the user subsequently reported that running animations looked normal. This
-feedback is a targeted gameplay check, not complete validation of all quests,
+the user initially reported normal running animations, but a later run exposed
+NPC freezing and spinning. Fixed stepping is no longer the default. Those short
+checks did not establish correct locomotion or complete validation of quests,
 ragdolls, moving platforms, cell transitions, mods or long sessions.
 
 ## Original diagnosis and adaptive fallback
@@ -130,3 +146,13 @@ The final binary was additionally launched without a dxvk.conf file and with
 DXVK_CONFIG / DXVK_CONFIG_FILE / SKYDREAM_VSYNC unset. DXVK selected
 VK_PRESENT_MODE_IMMEDIATE_KHR before and after the scripted F11 fullscreen
 transition. Fixed solver monitoring continued reporting zero nonfixed steps.
+
+## NPC regression containment
+
+The normal-launch mode selection is now covered by the real bridge test and by
+the 128,000-case original-scheduler oracle without a forced mode environment
+variable. Stable-mode motion readers return the original scheduler's frame delta;
+they do not use the experimental fixed-mode snapshot. Enabling fixed mode again
+by default requires tick-buffered movement/rotation commands, proper root-motion
+consumption, multi-step handling and meaningful NPC gameplay validation. A cap
+or interpolation-only cosmetic change is not a substitute for that work.
