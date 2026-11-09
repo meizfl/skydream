@@ -57,23 +57,23 @@ jobs:
       - name: macOS full build and embedded execution
         if: runner.os == 'macOS'
         run: |
-          cmake --preset desktop -DCMAKE_PREFIX_PATH="$(brew --prefix)" -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON -DLB_GEN_JOBS=2
+          cmake --preset desktop -DCMAKE_PREFIX_PATH="$(brew --prefix)" -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON -DSKYDREAM_ROOT_PACKAGE=ON -DLB_GEN_JOBS=2
           cmake --build --preset desktop --parallel 3
-          test "$(lipo -archs build/lb)" = "${{ matrix.arch }}"
+          test "$(lipo -archs build/Skydream)" = "${{ matrix.arch }}"
           ctest --test-dir build/native/desktop --output-on-failure
           cmake --install build/native --prefix "$PWD/build/stage"
           codesign --force --sign - build/stage/lib/skyrim-native/libdxvk_d3d9.dylib
-          codesign --force --sign - build/stage/bin/lb
-          build/stage/bin/lb --embedded-smoke
+          codesign --force --sign - build/stage/Skydream
+          build/stage/Skydream --embedded-smoke
       - name: Windows full build and embedded execution
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
-          cmake --preset desktop -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON -DLB_GEN_JOBS=2
+          cmake --preset desktop -DSKYDREAM_SKSE=ON -DSKYDREAM_SKYUI=ON -DSKYDREAM_ROOT_PACKAGE=ON -DLB_GEN_JOBS=2
           cmake --build --preset desktop --parallel 3
           ctest --test-dir build/native/desktop --output-on-failure
           cmake --install build/native --prefix "$PWD/build/stage"
-          build/stage/bin/lb.exe --embedded-smoke
+          build/stage/Skydream.exe --embedded-smoke
       - name: Encrypt tested build
         env:
           SKYDREAM_ARTIFACT_KEY: ${{ secrets.SKYDREAM_ARTIFACT_KEY }}
