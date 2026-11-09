@@ -1,0 +1,41 @@
+name: Publish tested desktop release draft
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Date-based release tag
+        required: true
+        default: '2026-11-09-desktop'
+      windows_run:
+        description: Successful Windows full-game run ID
+        required: true
+        default: '42624455501'
+      macos_run:
+        description: Successful macOS full-game run ID
+        required: true
+        default: '42627345063'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  prepare-release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install cryptography==50.0.2
+      - name: Decrypt authenticated tested archives and create draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SKYDREAM_ARTIFACT_KEY: ${{ secrets.SKYDREAM_ARTIFACT_KEY }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          WINDOWS_RUN: ${{ inputs.windows_run }}
+          MACOS_RUN: ${{ inputs.macos_run }}
+        run: python tools/prepare_desktop_release.py
+      - name: Remove plaintext and encrypted temporary products
+        if: always()
+        run: rm -rf build/release-assets
