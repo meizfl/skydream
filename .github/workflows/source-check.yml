@@ -19,7 +19,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config libsdl2-dev libvulkan-dev libavcodec-dev libavutil-dev libswresample-dev libavformat-dev libswscale-dev ffmpeg bison flex libjson-perl wine64-tools curl xz-utils
-          python3 -m pip install -r requirements.txt
+          python3 -m pip install -r requirements.txt cryptography==50.0.2
       - name: Build native HLSL compiler
         run: JOBS=2 sh tools/build-native-shader.sh
       - name: Test synthetic inputs
